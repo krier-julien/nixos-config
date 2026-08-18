@@ -369,7 +369,7 @@ vainfo                           # hardware decode present
 
 # CPU
 cat /sys/devices/system/cpu/amd_pstate/status        # active
-cat /sys/devices/system/cpu/amd_x3d_vcache/mode      # cache
+cat /sys/bus/platform/drivers/amd_x3d_vcache/*/amd_x3d_mode   # cache
 systemctl status amd-x3d-vcache-mode
 
 # Cooling — this is the one that was silently broken on the old machine
