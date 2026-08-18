@@ -158,15 +158,41 @@ findmnt -R /mnt
 
 ## 4. Get the config onto the machine
 
-```sh
-nix-shell -p git
+**The GitHub repo is private, so you cannot clone it from the installer** — the
+ISO has no credentials, and the SSH key that can read it lives on the drive you
+are about to erase. Copy the repo to a USB stick *before* you wipe:
 
-git clone https://github.com/<you>/nixos-config /mnt/etc/nixos
+```sh
+# ── on CachyOS, BEFORE the install ──
+# 252 KB. Any USB stick will do; it does not have to be the ISO one.
+cp -r ~/nixos-config /run/media/julien/<STICK>/nixos-config
+sync
+```
+
+Then, from the NixOS ISO:
+
+```sh
+mkdir -p /mnt/etc/nixos
+cp -r /run/media/<STICK>/nixos-config/. /mnt/etc/nixos/
 cd /mnt/etc/nixos
 ```
 
-> First time through you have no GitHub repo yet — copy the directory off a USB
-> stick instead, or `scp` it from another machine. Push it to GitHub afterwards.
+<details><summary>Alternative: bring the SSH key instead of the repo</summary>
+
+If you would rather clone fresh, copy `~/.ssh/id_ed25519` to the stick as well
+and put it in place on the installer:
+
+```sh
+mkdir -p ~/.ssh && cp /run/media/<STICK>/id_ed25519 ~/.ssh/
+chmod 700 ~/.ssh && chmod 600 ~/.ssh/id_ed25519
+nix-shell -p git
+git clone git@github.com:krier-julien/nixos-config.git /mnt/etc/nixos
+```
+
+That private key is a credential — treat the stick accordingly, and delete the
+copy afterwards.
+
+</details>
 
 ### 4.1 Fill in the two UUIDs
 
