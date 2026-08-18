@@ -12,7 +12,7 @@
       # General coverage
       noto-fonts
       noto-fonts-cjk-sans # Japanese/Chinese — game titles, nxapi presence text
-      noto-fonts-emoji
+      noto-fonts-color-emoji
       jetbrains-mono
       inter
     ];

@@ -28,7 +28,7 @@
     settings.default_session = {
       # Full store paths: the greeter runs as the `greeter` user, whose PATH
       # does not include your session's packages.
-      command = "${pkgs.greetd.tuigreet}/bin/tuigreet --time --remember --remember-user-session --asterisks --cmd '${pkgs.uwsm}/bin/uwsm start hyprland-uwsm.desktop'";
+      command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --remember-user-session --asterisks --cmd '${pkgs.uwsm}/bin/uwsm start hyprland-uwsm.desktop'";
       user = "greeter";
     };
   };
@@ -50,7 +50,7 @@
   services.tumbler.enable = true;
   programs.thunar = {
     enable = true;
-    plugins = with pkgs.xfce; [thunar-archive-plugin thunar-volman];
+    plugins = with pkgs; [thunar-archive-plugin thunar-volman];
   };
 
   # gpu-screen-recorder needs a setuid helper to capture on NVIDIA. The NixOS

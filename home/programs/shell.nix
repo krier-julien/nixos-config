@@ -47,12 +47,15 @@
 
   programs.git = {
     enable = true;
-    userName = "krier-julien";
-    # GitHub's noreply address. Commits are still attributed to the account and
-    # show your avatar, but neither the uni address nor the personal one ends up
-    # in a git log — which outlives any decision to make a repo private again.
-    userEmail = "krier-julien@users.noreply.github.com";
-    extraConfig = {
+    # home-manager folded userName/userEmail/extraConfig into one `settings`
+    # attrset that mirrors git's own config structure.
+    settings = {
+      user.name = "krier-julien";
+      # GitHub's noreply address. Commits are still attributed to the account
+      # and show your avatar, but neither the uni address nor the personal one
+      # ends up in a git log — which outlives any decision about repo
+      # visibility.
+      user.email = "krier-julien@users.noreply.github.com";
       init.defaultBranch = "main";
       pull.rebase = true;
       push.autoSetupRemote = true;

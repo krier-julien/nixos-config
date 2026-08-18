@@ -32,7 +32,7 @@
   #
   # Then authenticate: see docs/INSTALL.md §7.2.
   # ─────────────────────────────────────────────────────────────────────────
-  enabled = false;
+  enabled = true;
 
   # NSA ID of the MAIN account (the one whose activity gets displayed).
   mainAccountNsaId = "6a3756fd9acdec95";

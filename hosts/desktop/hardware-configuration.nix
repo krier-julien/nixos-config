@@ -33,7 +33,13 @@
   # 7950X3D — Zen 4, x86-64-v4 capable.
   hardware.cpu.amd.updateMicrocode = lib.mkDefault true;
 
-  # MT7922 Wi-Fi 6E and the RTL8125 2.5 GbE both need firmware from the
-  # linux-firmware set, which enableAllFirmware pulls in wholesale.
-  hardware.enableAllFirmware = true;
+  # MT7922 Wi-Fi 6E and the RTL8125 2.5 GbE both need firmware, and both are in
+  # linux-firmware, which this pulls in.
+  #
+  # NOT enableAllFirmware: that adds the non-redistributable blobs too —
+  # facetimehd (a MacBook camera), b43 (old Broadcom Wi-Fi), broadcom-bt and the
+  # Xbox wireless dongle. None of that exists in this machine, and every one of
+  # them has to be zstd-recompressed locally because the unfree bits are not in
+  # the binary cache.
+  hardware.enableRedistributableFirmware = true;
 }
