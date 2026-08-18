@@ -330,7 +330,7 @@
 
       -- ---- Apps ----
       hl.bind(mod .. " + T", hl.dsp.exec_cmd("foot"))
-      hl.bind(mod .. " + W", hl.dsp.exec_cmd("firefox"))
+      hl.bind(mod .. " + W", hl.dsp.exec_cmd("brave-origin"))
       hl.bind(mod .. " + E", hl.dsp.exec_cmd("thunar"))
       hl.bind("CTRL + ALT + V", hl.dsp.exec_cmd("pwvucontrol"))
 

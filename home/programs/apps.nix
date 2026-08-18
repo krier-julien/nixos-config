@@ -25,6 +25,12 @@
     # have run ./scripts/update-hashes.sh — see the comment there.
 
     # ── Browser and desktop basics ──────────────────────────────────────
+    # Brave Origin is the default (see xdg.mimeApps below): the stripped-down
+    # Brave build, with Leo/Rewards/Wallet/VPN/News/Talk/Tor removed rather
+    # than merely switched off. Paid elsewhere, free on Linux. Firefox stays
+    # installed as a second engine — Brave is Chromium, so when a site breaks
+    # in one it is worth trying the other.
+    brave-origin
     firefox
     micro
     fastfetch
@@ -49,9 +55,9 @@
   xdg.mimeApps = {
     enable = true;
     defaultApplications = {
-      "text/html" = "firefox.desktop";
-      "x-scheme-handler/http" = "firefox.desktop";
-      "x-scheme-handler/https" = "firefox.desktop";
+      "text/html" = "brave-origin.desktop";
+      "x-scheme-handler/http" = "brave-origin.desktop";
+      "x-scheme-handler/https" = "brave-origin.desktop";
       "x-scheme-handler/curseforge" = "curseforge.desktop";
       "x-scheme-handler/cfauth" = "curseforge.desktop";
       "inode/directory" = "thunar.desktop";
