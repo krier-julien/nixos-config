@@ -92,7 +92,7 @@ buildNpmPackage rec {
   #   nix build .#nxapi 2>&1 | grep -A2 'got:'
   #
   # Or run ../../scripts/update-hashes.sh, which does exactly that.
-  npmDepsHash = lib.fakeHash;
+  npmDepsHash = "sha256-k73WmGY1mzw0RYZ+dLn9kmkMYzAI6gRmaWSUefMSGbU=";
 
   # No install script here needs to run, and one of them wants the network:
   # sharp's `node install/check` verifies its prebuilt binary, which npm has
