@@ -4,6 +4,7 @@ NixOS configuration for a single desktop: **Hyprland + Caelestia**, on a
 Ryzen 9 7950X3D / RTX 4090 / 64 GB DDR5 / 2× WD SN850X box.
 
 Installing from scratch? → **[docs/INSTALL.md](docs/INSTALL.md)**
+Trying it out first? → **[docs/TESTING.md](docs/TESTING.md)**
 
 ---
 
@@ -24,15 +25,20 @@ Installing from scratch? → **[docs/INSTALL.md](docs/INSTALL.md)**
 ## Layout
 
 ```
-flake.nix                      inputs, the one nixosConfiguration, the overlay
-hosts/desktop/
-  default.nix                  hostname, stateVersion
+flake.nix                      inputs, the overlay, two hosts via mkHost
+hosts/desktop/                 the real machine
+  default.nix                  hostname + which hardware modules to pull in
   hardware-configuration.nix   kernel modules, firmware — hand-written from live hw
   disks.nix                    the btrfs pool  ← the only file you edit at install
-modules/nixos/                 system-level, one file per concern
-  boot cpu nvidia networking locale users nix-settings
-  desktop audio capture gaming liquidctl fonts
-home/                          home-manager, user-level
+hosts/vm/                      throwaway test VM: no GPU, no capture card, no AIO
+modules/nixos/
+  default.nix                  the common set, imported by BOTH hosts
+    boot networking locale users nix-settings desktop audio fonts
+  cpu nvidia capture liquidctl gaming    ← desktop-only, imported by that host
+home/
+  common.nix                   shared by both hosts (Caelestia, Hyprland, theme, shell)
+  default.nix                  desktop: common + apps + obs + the two user services
+  vm.nix                       VM: common + a handful of test packages
   caelestia.nix                the shell, via its official HM module
   hyprland.nix                 the compositor config — YOURS, not Caelestia's
   theme.nix                    GTK/Qt/cursor scaffolding for Caelestia to recolour
@@ -43,7 +49,15 @@ pkgs/                          things nixpkgs doesn't have
   nxapi/                       npm, with a committed runtime-only lockfile
 scripts/                       hash refreshers
 docs/INSTALL.md                install day, start to finish
+docs/TESTING.md                how to check this before wiping anything
 ```
+
+## Hosts
+
+| Attribute | What it is |
+|---|---|
+| `julien-desktop` | The real machine. 7950X3D + 4090 + Elgato + Kraken. |
+| `nixos-vm` | A test VM. Same shell and desktop, none of the hardware modules. `nix build .#nixosConfigurations.nixos-vm.config.system.build.vm` builds a runnable QEMU image. |
 
 ## Rebuilding
 

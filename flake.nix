@@ -47,31 +47,53 @@
       packages = with pkgs; [alejandra nix-output-monitor nvd nix-prefetch];
     };
 
-    # ---- the machine -----------------------------------------------------
-    nixosConfigurations.julien-desktop = nixpkgs.lib.nixosSystem {
-      inherit system;
-      specialArgs = {inherit inputs;};
-      modules = [
-        {
-          nixpkgs.overlays = [self.overlays.default];
-          nixpkgs.config.allowUnfree = true;
-        }
+    # ---- the machines ----------------------------------------------------
+    # mkHost keeps the two configurations from drifting: same nixpkgs, same
+    # overlay, same home-manager wiring. Only the host directory and the
+    # home-manager entry point differ.
+    nixosConfigurations = let
+      mkHost = {
+        hostPath,
+        homeEntry,
+      }:
+        nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = {inherit inputs;};
+          modules = [
+            {
+              nixpkgs.overlays = [self.overlays.default];
+              nixpkgs.config.allowUnfree = true;
+            }
 
-        ./hosts/desktop
+            hostPath
 
-        home-manager.nixosModules.home-manager
-        {
-          home-manager = {
-            useGlobalPkgs = true;
-            useUserPackages = true;
-            extraSpecialArgs = {inherit inputs;};
-            # If a file already exists where home-manager wants to write one, it
-            # moves it aside instead of aborting the whole switch.
-            backupFileExtension = "hm-bak";
-            users.julien = import ./home;
-          };
-        }
-      ];
+            home-manager.nixosModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                extraSpecialArgs = {inherit inputs;};
+                # If a file already exists where home-manager wants to write
+                # one, move it aside instead of aborting the whole switch.
+                backupFileExtension = "hm-bak";
+                users.julien = import homeEntry;
+              };
+            }
+          ];
+        };
+    in {
+      # The real machine.
+      julien-desktop = mkHost {
+        hostPath = ./hosts/desktop;
+        homeEntry = ./home;
+      };
+
+      # A throwaway VM for testing this config before touching the real
+      # machine. See docs/TESTING.md.
+      nixos-vm = mkHost {
+        hostPath = ./hosts/vm;
+        homeEntry = ./home/vm.nix;
+      };
     };
   };
 }
