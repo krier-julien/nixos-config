@@ -187,6 +187,23 @@ nano hosts/desktop/disks.nix
 There is nothing else to edit. Hostname, user, locale, timezone and keymap are
 already set for this machine.
 
+> **If you cloned with git:** Nix flakes only see files that git *tracks*.
+> Modifying a tracked file (like `disks.nix`) is fine — a dirty tree is read
+> normally. But a brand-new file you forgot to `git add` is invisible to the
+> build and you get a baffling "file not found". If you copied the directory off
+> a USB stick without `.git`, this doesn't apply at all.
+
+### 4.2 Lock the inputs
+
+```sh
+nix flake lock --extra-experimental-features 'nix-command flakes'
+```
+
+Doing this as its own step means input-fetching failures (a network blip, a
+GitHub rate limit) surface here rather than 20 minutes into the install. It
+writes `flake.lock`, which is what pins Caelestia and nixpkgs to exact
+revisions — commit it.
+
 ---
 
 ## 5. Install
@@ -194,25 +211,28 @@ already set for this machine.
 ```sh
 nixos-install \
   --flake /mnt/etc/nixos#julien-desktop \
-  --no-root-password \
   --option experimental-features 'nix-command flakes'
 ```
+
+It prompts for a **root password** at the end. Set one, and don't skip it —
+`security.sudo.execWheelOnly` plus a greeter that only offers `julien` means a
+root password is your way back in if the next step goes wrong.
 
 This pulls a lot — NVIDIA, Steam's 32-bit stack, Qt for Quickshell. Expect a
 while on a good connection.
 
-> **Expected failure on the first run:** `nxapi` will fail with a
-> `npmDepsHash` mismatch, because that hash is `lib.fakeHash` in the repo and Nix
-> cannot know the real one until it has fetched the dependency set once. See
-> §7.1 — you can either fix it now (recommended, it is 30 seconds) or comment
-> `nxapi` out of `home/programs/apps.nix` and `home/services/nxapi.nix`,
-> install, and fix it after first boot.
-
-Set your password:
+Then set julien's password — without this you cannot log in at the greeter:
 
 ```sh
 nixos-enter --root /mnt -c 'passwd julien'
 ```
+
+> **nxapi is switched off for this build.** Its `npmDepsHash` is still
+> `lib.fakeHash`, and a hash mismatch would take the whole system build down for
+> the sake of a Discord Rich Presence. The `enabled = false` at the top of
+> `home/services/nxapi.nix` keeps the package from being referenced at all.
+> Turn it on in §7.1, once you have a booted system and generations to roll
+> back to.
 
 Then:
 
@@ -236,6 +256,16 @@ journalctl -b -u greetd
 journalctl --user -b -u caelestia
 ```
 
+**If it never gets that far** — plymouth hides the boot messages by design. At
+the systemd-boot menu press `e` to edit the kernel command line for one boot,
+delete `quiet` and `splash`, and press Enter. You will see exactly where it
+stops. `boot.shell_on_fail` is already in the kernel params, so a stage-1
+failure drops you to a shell rather than hanging.
+
+**If the desktop is broken but the machine boots**, pick the previous generation
+from the systemd-boot menu. Nothing a bad `nixos-rebuild switch` does is
+permanent.
+
 ---
 
 ## 7. The three things that need doing by hand
@@ -243,17 +273,24 @@ journalctl --user -b -u caelestia
 Everything else in this repo is declarative. These three are not, because they
 involve a hash Nix has to discover, a Nintendo login, and an OBS GUI.
 
-### 7.1 Fill in the nxapi hash
+### 7.1 Turn nxapi on
+
+Two steps: discover the hash, then flip the switch.
 
 ```sh
 cd ~/nixos-config          # or wherever you keep the repo
+
+# 1. builds .#nxapi, reads the real hash out of the mismatch error, and writes
+#    it into pkgs/nxapi/default.nix
 ./scripts/update-hashes.sh
+
+# 2. the single boolean that installs the package AND enables the service
+sed -i 's/enabled = false/enabled = true/' home/services/nxapi.nix
+
 sudo nixos-rebuild switch --flake .#julien-desktop
 ```
 
-The script builds `.#nxapi`, reads the real hash out of the mismatch error, and
-writes it back into `pkgs/nxapi/default.nix`. Commit the result — it only ever
-changes when the nxapi version does.
+Commit both changes. The hash only ever changes when the nxapi version does.
 
 ### 7.2 Authenticate nxapi
 

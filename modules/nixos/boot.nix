@@ -11,10 +11,24 @@
     timeout = 3;
   };
 
-  # linux_zen: the closest thing in nixpkgs to what CachyOS gives you — desktop
-  # latency tuning and a scheduler tuned for interactivity. `pkgs.linuxPackages_latest`
-  # is the alternative if a zen release ever lags behind an NVIDIA driver you need.
-  boot.kernelPackages = pkgs.linuxPackages_zen;
+  # The nixpkgs DEFAULT kernel, deliberately.
+  #
+  # linux_zen is the closest thing in nixpkgs to what CachyOS gave you, and it
+  # is tempting. But the NVIDIA kernel module has to compile against whatever
+  # kernel you pick, and nixpkgs only guarantees that pairing for the default
+  # kernel. A zen release that has moved ahead of the driver takes the entire
+  # system build down — which on install day means no system at all, with no
+  # previous generation to boot back into.
+  #
+  # Switch AFTER the first successful boot, when a bad build just means picking
+  # the older generation in the boot menu:
+  #
+  #   boot.kernelPackages = pkgs.linuxPackages_zen;     # or _latest, or _xanmod
+  #
+  # On a 7950X3D driving a 4090 the practical difference is small; amd_pstate
+  # and the V-Cache scheduling in ./cpu.nix are where the real gains are, and
+  # those are in the mainline kernel.
+  boot.kernelPackages = pkgs.linuxPackages;
 
   # Quiet, flicker-free boot into the greeter.
   boot.plymouth.enable = true;

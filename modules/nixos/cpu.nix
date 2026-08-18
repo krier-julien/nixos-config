@@ -43,6 +43,9 @@
     btop # has an AMD-aware GPU/CPU view
   ];
 
-  # Let unprivileged tools read MSRs for per-core frequency readouts.
-  hardware.cpu.amd.ryzen-smu.enable = true;
+  # NOT enabling hardware.cpu.amd.ryzen-smu: it builds an out-of-tree kernel
+  # module, which is exactly the kind of thing that fails to compile against a
+  # new kernel and takes the whole system build down with it. All it buys is
+  # per-core SMU telemetry. Turn it on later, once you have generations to roll
+  # back to.
 }

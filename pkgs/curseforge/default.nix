@@ -29,7 +29,13 @@
   # buttons on the website work.
   desktopItem = makeDesktopItem {
     name = pname;
-    exec = "${pname} %U";
+    # --no-sandbox belongs here, in the Exec line. appimageTools.wrapType2 has
+    # no argument for injecting flags: it builds on buildFHSEnv and sets
+    # runScript itself to "appimage-exec.sh -w <contents> --", forwarding "$@".
+    # Electron's chrome-sandbox needs a setuid helper that an AppImage unpacked
+    # into the Nix store cannot have, so without this the app exits immediately
+    # with a SUID sandbox error.
+    exec = "${pname} --no-sandbox %U";
     icon = pname;
     desktopName = "CurseForge";
     comment = "The CurseForge Electron App";
@@ -46,11 +52,6 @@
 in
   appimageTools.wrapType2 {
     inherit pname version src;
-
-    # --no-sandbox is required, not optional: Electron's chrome-sandbox needs a
-    # setuid helper, and an AppImage unpacked into the Nix store has no way to
-    # get one. Without this the app exits immediately with a SUID sandbox error.
-    extraOptions = "--no-sandbox";
 
     extraPkgs = _pkgs: [
       # Modded Minecraft spans Java versions: 8 for 1.12-era packs, 17 for

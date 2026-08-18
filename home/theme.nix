@@ -29,10 +29,8 @@
     x11.enable = true;
   };
 
-  # Match the system-level qt settings (modules/nixos/desktop.nix) so Qt apps
-  # started from the session and from a terminal look the same.
-  qt = {
-    enable = true;
-    platformTheme.name = "gtk3";
-  };
+  # No `qt` block here on purpose. modules/nixos/desktop.nix already sets
+  # qt.platformTheme system-wide, and Caelestia's CLI rewrites the Qt palette
+  # from the wallpaper anyway. A second definition in home-manager would just
+  # be another QT_QPA_PLATFORMTHEME racing the first.
 }

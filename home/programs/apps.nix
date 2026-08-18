@@ -19,7 +19,10 @@
     curseforge # custom package, ../../pkgs/curseforge
 
     # ── Switch presence ─────────────────────────────────────────────────
-    nxapi # custom package, ../../pkgs/nxapi — driven by ../services/nxapi.nix
+    # nxapi is NOT listed here. It is installed by ../services/nxapi.nix,
+    # behind the single `enabled` boolean at the top of that file, so the
+    # binary and its service can never get out of step. It is off until you
+    # have run ./scripts/update-hashes.sh — see the comment there.
 
     # ── Browser and desktop basics ──────────────────────────────────────
     firefox

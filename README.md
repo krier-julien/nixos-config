@@ -100,8 +100,25 @@ Three things are not declarative, for reasons that are not fixable:
 | What | Why | Where |
 |---|---|---|
 | `npmDepsHash` for nxapi | Nix can't know a dependency-set hash until it fetches it once | `scripts/update-hashes.sh` |
+| `enabled = false` → `true` | nxapi is gated off so a fakeHash can't fail the install | `home/services/nxapi.nix` |
 | `nxapi nso auth` | A Nintendo login flow | INSTALL.md §7.2 |
 | OBS monitoring device | OBS keeps its config in a profile not worth generating | `home/programs/obs.nix` |
+
+## Conservative choices for the first install
+
+Three places pick the boring option on purpose, because a build failure during
+`nixos-install` leaves you with no system and no generation to roll back to.
+All three are one-line changes once the machine boots:
+
+| Setting | Now | Upgrade to |
+|---|---|---|
+| `boot.kernelPackages` | `linuxPackages` (nixpkgs default) | `linuxPackages_zen` |
+| `hardware.nvidia.package` | `nvidiaPackages.production` | `.beta` / `.latest` |
+| nxapi | off | `enabled = true` after the hash is filled |
+
+nixpkgs only guarantees that the NVIDIA module compiles against the *default*
+kernel. Pairing a zen kernel with a beta driver on install day is how you end up
+at a stage-1 shell.
 
 CurseForge's pinned hash also goes stale on every upstream release, because they
 publish only a "latest" URL. `scripts/update-curseforge.sh` re-pins it.

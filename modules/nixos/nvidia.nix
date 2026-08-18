@@ -17,7 +17,14 @@
   };
 
   hardware.nvidia = {
-    package = config.boot.kernelPackages.nvidiaPackages.beta;
+    # production, not beta or latest. Same reasoning as the kernel choice in
+    # ./boot.nix: this is the branch nixpkgs actually tests against the default
+    # kernel, and a driver that fails to build is a system that fails to build.
+    # Your CachyOS install is on 610.57.04, which is newer — if you want that,
+    # switch to `.beta` or `.latest` after the first successful boot, when a bad
+    # build costs you a reboot into the previous generation instead of an
+    # install.
+    package = config.boot.kernelPackages.nvidiaPackages.production;
 
     # Ada is fully supported by the open kernel modules, and NVIDIA now treats
     # them as the default for Turing and newer. They are the *kernel* modules

@@ -17,7 +17,6 @@
 # ../../docs/TESTING.md.
 {
   lib,
-  pkgs,
   modulesPath,
   ...
 }: {
@@ -76,11 +75,6 @@
   boot.kernelParams = lib.mkForce ["console=tty0"];
   boot.initrd.verbose = lib.mkForce true;
   boot.consoleLogLevel = lib.mkForce 4;
-
-  # The zen kernel builds fine in a VM, but the generic one is what the ISO
-  # already has warm in its store — a faster test cycle, and the kernel is not
-  # what you are testing here.
-  boot.kernelPackages = lib.mkForce pkgs.linuxPackages;
 
   # VirtualBox guest additions (clipboard, resize). Left off by default because
   # it builds an out-of-tree kernel module and can break on a kernel bump —
