@@ -1,0 +1,10 @@
+result
+result-*
+.direnv/
+*.qcow2
+
+# nxapi session tokens must never end up here — they are live Nintendo
+# credentials. They live in ~/.local/share/nxapi-nodejs/persist/, outside this
+# repo, but guard against a stray copy.
+persist/
+*.token

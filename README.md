@@ -1,0 +1,93 @@
+# nixos-config
+
+NixOS configuration for a single desktop: **Hyprland + Caelestia**, on a
+Ryzen 9 7950X3D / RTX 4090 / 64 GB DDR5 / 2× WD SN850X box.
+
+Installing from scratch? → **[docs/INSTALL.md](docs/INSTALL.md)**
+
+---
+
+## What this builds
+
+- NixOS unstable, systemd-boot, `linux_zen`
+- One btrfs pool spanning both NVMe drives, zstd:1, zram swap
+- Hyprland under **uwsm**, greeted by **greetd + tuigreet**
+- **Caelestia** shell from its official flake — bar, launcher, dashboard,
+  notifications, lock screen, Material You colours generated from the wallpaper
+- NVIDIA open kernel modules, Wayland-native
+- Steam + gamescope + gamemode + ProtonPlus, CurseForge, Discord, OBS, Plezy,
+  Pear Desktop
+- The three hardware integrations this machine actually exists for:
+  the **Elgato 4K X audio routing**, **liquidctl** fan/pump control, and
+  **nxapi** Switch Rich Presence
+
+## Layout
+
+```
+flake.nix                      inputs, the one nixosConfiguration, the overlay
+hosts/desktop/
+  default.nix                  hostname, stateVersion
+  hardware-configuration.nix   kernel modules, firmware — hand-written from live hw
+  disks.nix                    the btrfs pool  ← the only file you edit at install
+modules/nixos/                 system-level, one file per concern
+  boot cpu nvidia networking locale users nix-settings
+  desktop audio capture gaming liquidctl fonts
+home/                          home-manager, user-level
+  caelestia.nix                the shell, via its official HM module
+  hyprland.nix                 the compositor config — YOURS, not Caelestia's
+  theme.nix                    GTK/Qt/cursor scaffolding for Caelestia to recolour
+  programs/                    apps, shell, terminal, obs
+  services/                    elgato-monitor, nxapi
+pkgs/                          things nixpkgs doesn't have
+  curseforge/                  AppImage, wrapped
+  nxapi/                       npm, with a committed runtime-only lockfile
+scripts/                       hash refreshers
+docs/INSTALL.md                install day, start to finish
+```
+
+## Rebuilding
+
+```sh
+sudo nixos-rebuild switch --flake ~/nixos-config#julien-desktop
+```
+
+Or the fish aliases: `rebuild`, `rebuild-test`, `rebuild-boot`, `update`,
+`whatchanged`.
+
+## Design notes
+
+**Caelestia owns the shell; this repo owns the compositor.** The official
+`caelestia-dots/shell` flake supplies the Quickshell bar/launcher/lockscreen and
+the theming engine. `home/hyprland.nix` is hand-written here, seeded from
+Caelestia's upstream keybinds so muscle memory carries over. The community "full
+dots" ports bundle a Hyprland config too, but the most complete one is archived
+and self-described as very experimental — not a base to build a daily driver on.
+
+**uwsm is load-bearing, not cosmetic.** It is what makes
+`graphical-session.target` actually get reached, and `nxapi.service` is bound to
+that target. Drop uwsm and the Rich Presence silently stops working.
+
+**The Elgato audio design is two paths that end in different places.** An
+always-on `pw-loopback` to the headset, and OBS monitoring into a null sink that
+only Discord reads. That separation is the entire reason the Switch isn't heard
+twice. Both halves are documented at length in `modules/nixos/audio.nix` and
+`home/services/elgato-monitor.nix` — read those before changing either.
+
+**`liquidctl` matches devices by name, not index.** `-d 0` is a position in USB
+enumeration order; a different kernel or port and you are sending
+`set pump speed` to a fan hub. On the old machine this unit also sat
+present-but-disabled for months, applying nothing. Declaring it in Nix makes
+"installed" and "enabled" the same act.
+
+## Known manual steps
+
+Three things are not declarative, for reasons that are not fixable:
+
+| What | Why | Where |
+|---|---|---|
+| `npmDepsHash` for nxapi | Nix can't know a dependency-set hash until it fetches it once | `scripts/update-hashes.sh` |
+| `nxapi nso auth` | A Nintendo login flow | INSTALL.md §7.2 |
+| OBS monitoring device | OBS keeps its config in a profile not worth generating | `home/programs/obs.nix` |
+
+CurseForge's pinned hash also goes stale on every upstream release, because they
+publish only a "latest" URL. `scripts/update-curseforge.sh` re-pins it.
