@@ -14,24 +14,52 @@
     xwayland.enable = true;
   };
 
-  # greetd + tuigreet: a text greeter, which is what Caelestia's own README
-  # recommends. It costs ~0 boot time and cannot fight the shell's theming the
-  # way a graphical DM would.
-  services.greetd = {
+  # ── Login manager: SDDM + the astronaut theme ────────────────────────────
+  # Caelestia ships no greeter and its README suggests greetd/tuigreet, which is
+  # lighter. SDDM is the deliberate choice here: the login screen is the first
+  # thing you see and a text prompt in front of a riced desktop looks unfinished.
+  #
+  # Caveat worth knowing: Caelestia's Material You colours do NOT reach any
+  # greeter — it is a separate, statically themed component that runs before
+  # your session exists. Continuity comes from pointing the theme at the same
+  # wallpaper, not from the colour engine.
+  services.displayManager.sddm = {
     enable = true;
 
-    # Wires up the tty plumbing a text greeter needs (Type=idle, TTYReset,
-    # stdin/stdout on the tty). Doing it by hand instead is how you end up with
-    # the greeter's prompt fighting kernel log output for tty1.
-    useTextGreeter = true;
+    # Run the greeter itself as a Wayland session. On an NVIDIA box whose only
+    # session is Wayland, this avoids standing up an entire X server purely to
+    # draw a login box, and makes the handoff into Hyprland a Wayland→Wayland
+    # transition rather than a server teardown.
+    wayland.enable = true;
 
-    settings.default_session = {
-      # Full store paths: the greeter runs as the `greeter` user, whose PATH
-      # does not include your session's packages.
-      command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --remember-user-session --asterisks --cmd '${pkgs.uwsm}/bin/uwsm start hyprland-uwsm.desktop'";
-      user = "greeter";
+    theme = "sddm-astronaut-theme";
+
+    # The theme is Qt6/QML and needs these at runtime. Without them SDDM starts,
+    # fails to load the QML, and falls back to a blank screen — the classic
+    # "SDDM boots to black" symptom.
+    extraPackages = with pkgs.kdePackages; [
+      qtsvg
+      qtmultimedia
+      qtvirtualkeyboard
+    ];
+
+    settings = {
+      # Numlock on at the login prompt, matching the Hyprland input config.
+      General.Numlock = "on";
     };
   };
+
+  # ── The uwsm trap ────────────────────────────────────────────────────────
+  # Unlike tuigreet — where the session is hardcoded into the greeter's --cmd —
+  # SDDM shows a session picker, and programs.hyprland.withUWSM installs TWO
+  # entries: "hyprland" and "hyprland-uwsm". Picking the plain one starts
+  # Hyprland outside a systemd user session, graphical-session.target is never
+  # reached, and nxapi.service silently never starts.
+  #
+  # This pre-selects the correct one. SDDM also remembers the last session per
+  # user, so after the first login it stays picked — but if the Switch presence
+  # ever stops working, THIS is the first thing to check.
+  services.displayManager.defaultSession = "hyprland-uwsm";
 
   # Portals: screen sharing, file pickers, and the "share a window" flow that
   # your OBS→Discord path depends on.
@@ -43,7 +71,10 @@
 
   # Secret storage. Discord, and anything using libsecret, expects it.
   services.gnome.gnome-keyring.enable = true;
-  security.pam.services.greetd.enableGnomeKeyring = true;
+  # Unlock the keyring at login. This must name the ACTUAL greeter — it was
+  # `greetd` before the switch to SDDM, and a stale name here means the keyring
+  # stays locked and Discord re-prompts for credentials every session.
+  security.pam.services.sddm.enableGnomeKeyring = true;
 
   # Thumbnails and trash support in the file manager.
   services.gvfs.enable = true;
@@ -59,6 +90,18 @@
   programs.gpu-screen-recorder.enable = true;
 
   environment.systemPackages = with pkgs; [
+    # --- the SDDM theme ---------------------------------------------------
+    # Must be in systemPackages, not merely in sddm.extraPackages: SDDM looks
+    # for themes under /run/current-system/sw/share/sddm/themes.
+    #
+    # embeddedTheme selects one of the bundled presets — change the string and
+    # rebuild. Available:
+    #   astronaut (default)      black_hole            cyberpunk
+    #   hyprland_kath            jake_the_dog          japanese_aesthetic
+    #   pixel_sakura             pixel_sakura_static   purple_leaves
+    #   post-apocalyptic_hacker
+    (sddm-astronaut.override {embeddedTheme = "astronaut";})
+
     # --- Caelestia CLI runtime dependencies -------------------------------
     # The home-manager module pulls the CLI in, but these are the external
     # programs it shells out to. Missing one produces a confusing "command not

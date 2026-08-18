@@ -270,13 +270,19 @@ Pull the USB stick.
 
 ## 6. First boot
 
-You should land on **tuigreet** — a text login. Log in as `julien`; it starts
-Hyprland under uwsm.
+You should land on **SDDM** with the astronaut theme. Log in as `julien`.
+
+> **Check the session picker once.** `programs.hyprland.withUWSM` installs two
+> session entries, `Hyprland` and `Hyprland (uwsm-managed)`. The config
+> pre-selects the uwsm one via `services.displayManager.defaultSession`, and
+> SDDM remembers your last choice afterwards — but if you ever pick the plain
+> one, `graphical-session.target` is never reached and **nxapi silently stops
+> working**. That is the first thing to check if the Switch presence disappears.
 
 If you get a black screen instead, switch to a TTY with `Ctrl+Alt+F2` and read:
 
 ```sh
-journalctl -b -u greetd
+journalctl -b -u display-manager
 journalctl --user -b -u caelestia
 ```
 

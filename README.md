@@ -12,7 +12,7 @@ Trying it out first? → **[docs/TESTING.md](docs/TESTING.md)**
 
 - NixOS unstable, systemd-boot, `linux_zen`
 - One btrfs pool spanning both NVMe drives, zstd:1, zram swap
-- Hyprland under **uwsm**, greeted by **greetd + tuigreet**
+- Hyprland under **uwsm**, greeted by **SDDM** with the `sddm-astronaut` theme
 - **Caelestia** shell from its official flake — bar, launcher, dashboard,
   notifications, lock screen, Material You colours generated from the wallpaper
 - NVIDIA open kernel modules, Wayland-native

@@ -133,7 +133,7 @@ options, and you should know why before you spend time on it.
 > same way with any Hyprland setup.
 
 What you *can* validate: the installer steps in [INSTALL.md](INSTALL.md), the
-boot chain, systemd-boot, and that greetd reaches a login prompt. That is real
+boot chain, systemd-boot, and that SDDM reaches a login prompt. That is real
 value if what you want to rehearse is the install procedure rather than the
 desktop.
 
