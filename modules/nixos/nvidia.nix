@@ -62,7 +62,25 @@
 
     # Electron apps (Discord, Pear Desktop, CurseForge) default to X11 unless
     # told otherwise; "auto" makes them pick Wayland when it is available.
+    # Electron reads this itself, from version 28 on.
     ELECTRON_OZONE_PLATFORM_HINT = "auto";
+
+    # The nixpkgs half of the same story, and the one that was missing.
+    # Chromium- and Electron-based packages in nixpkgs are wrapped like this:
+    #
+    #   --add-flags "${NIXOS_OZONE_WL:+${WAYLAND_DISPLAY:+--ozone-platform-hint=auto ...}}"
+    #
+    # i.e. the Wayland flags are only passed when NIXOS_OZONE_WL is set. With
+    # it unset, that expansion is empty and the app falls back to XWayland —
+    # where `xwayland.force_zero_scaling` (see ../../home/hyprland.nix) hands
+    # it raw 4K pixels, so it comes up at half size on the TV.
+    #
+    # Electron apps were partly saved by the variable above, which Electron
+    # honours on its own. Brave is plain Chromium, not Electron, so it read
+    # neither and was running on XWayland the whole time. This fixes Brave
+    # Origin, and gets the extra flags (WaylandWindowDecorations, the Wayland
+    # IME) that ELECTRON_OZONE_PLATFORM_HINT alone does not turn on.
+    NIXOS_OZONE_WL = "1";
   };
 
   # NOTE: do *not* set WLR_NO_HARDWARE_CURSORS. It was the standard NVIDIA

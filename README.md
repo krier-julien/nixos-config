@@ -95,12 +95,14 @@ present-but-disabled for months, applying nothing. Declaring it in Nix makes
 
 ## Known manual steps
 
-Three things are not declarative, for reasons that are not fixable:
+Four things are not declarative, for reasons that are not fixable:
 
 | What | Why | Where |
 |---|---|---|
 | `nxapi nso auth` | A Nintendo login flow | INSTALL.md §7.1 |
 | OBS monitoring device | OBS keeps its config in a profile not worth generating | `home/programs/obs.nix` |
+| Steam → Settings → Accessibility → **UI Scale** | The desktop client ignores the compositor scale, and Valve removed the env var and the launch flag that used to override it (July 2025). The slider is the only remaining control, and it lives in Steam's own mutable config | `modules/nixos/gaming.nix` |
+| `caelestia scheme set -n dynamic` | Deriving the palette from the wallpaper is a scheme you select once at runtime, not a config key | `home/caelestia.nix` |
 
 Hashes are all real and committed. `scripts/update-hashes.sh` and
 `scripts/update-curseforge.sh` exist for version bumps, not for first setup.

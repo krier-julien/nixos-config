@@ -121,7 +121,6 @@
 
     # --- session odds and ends --------------------------------------------
     polkit_gnome # graphical auth prompts
-    gammastep # night light
     brightnessctl
     playerctl
     wev # `wev` — read raw key events when a bind won't fire
