@@ -1,5 +1,12 @@
 # Testing this config before you wipe anything
 
+> **Already done once, on 2026-08-18.** Nix was installed alongside CachyOS and
+> the whole thing was evaluated and built end to end: both hosts evaluate with
+> zero warnings, all 712 derivations build (Caelestia and quickshell compile
+> from source — they have no binary cache), and the generated systemd units were
+> read back out of the closure and checked by hand. The steps below are how to
+> repeat that after a change.
+
 Three tiers, cheapest first. **Tier 1 catches almost everything I'd worry
 about** and takes minutes — do it before you spend an hour on a VM install.
 

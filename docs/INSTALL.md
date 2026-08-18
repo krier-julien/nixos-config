@@ -253,12 +253,10 @@ Then set julien's password — without this you cannot log in at the greeter:
 nixos-enter --root /mnt -c 'passwd julien'
 ```
 
-> **nxapi is switched off for this build.** Its `npmDepsHash` is still
-> `lib.fakeHash`, and a hash mismatch would take the whole system build down for
-> the sake of a Discord Rich Presence. The `enabled = false` at the top of
-> `home/services/nxapi.nix` keeps the package from being referenced at all.
-> Turn it on in §7.1, once you have a booted system and generations to roll
-> back to.
+> **This whole configuration was built end to end before the install**, on the
+> old CachyOS system with nix installed alongside it. Both hosts evaluate clean
+> and every package builds, including the two custom ones. What you are running
+> here is not a first attempt.
 
 Then:
 
@@ -294,31 +292,12 @@ permanent.
 
 ---
 
-## 7. The three things that need doing by hand
+## 7. The two things that need doing by hand
 
-Everything else in this repo is declarative. These three are not, because they
-involve a hash Nix has to discover, a Nintendo login, and an OBS GUI.
+Everything else in this repo is declarative. These two are not, because one is a
+Nintendo login and the other is an OBS GUI.
 
-### 7.1 Turn nxapi on
-
-Two steps: discover the hash, then flip the switch.
-
-```sh
-cd ~/nixos-config          # or wherever you keep the repo
-
-# 1. builds .#nxapi, reads the real hash out of the mismatch error, and writes
-#    it into pkgs/nxapi/default.nix
-./scripts/update-hashes.sh
-
-# 2. the single boolean that installs the package AND enables the service
-sed -i 's/enabled = false/enabled = true/' home/services/nxapi.nix
-
-sudo nixos-rebuild switch --flake .#julien-desktop
-```
-
-Commit both changes. The hash only ever changes when the nxapi version does.
-
-### 7.2 Authenticate nxapi
+### 7.1 Authenticate nxapi
 
 Remember the second-account trick: Nintendo will not report your own presence to
 your own session, so nxapi logs in as a **secondary account that is friends with
@@ -344,7 +323,7 @@ spaces and all, must come back on one line:
 systemctl --user show nxapi.service -p Environment
 ```
 
-### 7.3 Configure OBS
+### 7.2 Configure OBS
 
 Full detail is in the comments at the bottom of `home/programs/obs.nix`. The one
 setting that matters:

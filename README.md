@@ -99,10 +99,11 @@ Three things are not declarative, for reasons that are not fixable:
 
 | What | Why | Where |
 |---|---|---|
-| `npmDepsHash` for nxapi | Nix can't know a dependency-set hash until it fetches it once | `scripts/update-hashes.sh` |
-| `enabled = false` → `true` | nxapi is gated off so a fakeHash can't fail the install | `home/services/nxapi.nix` |
-| `nxapi nso auth` | A Nintendo login flow | INSTALL.md §7.2 |
+| `nxapi nso auth` | A Nintendo login flow | INSTALL.md §7.1 |
 | OBS monitoring device | OBS keeps its config in a profile not worth generating | `home/programs/obs.nix` |
+
+Hashes are all real and committed. `scripts/update-hashes.sh` and
+`scripts/update-curseforge.sh` exist for version bumps, not for first setup.
 
 ## Conservative choices for the first install
 
@@ -114,7 +115,6 @@ All three are one-line changes once the machine boots:
 |---|---|---|
 | `boot.kernelPackages` | `linuxPackages` (nixpkgs default) | `linuxPackages_zen` |
 | `hardware.nvidia.package` | `nvidiaPackages.production` | `.beta` / `.latest` |
-| nxapi | off | `enabled = true` after the hash is filled |
 
 nixpkgs only guarantees that the NVIDIA module compiles against the *default*
 kernel. Pairing a zen kernel with a beta driver on install day is how you end up
