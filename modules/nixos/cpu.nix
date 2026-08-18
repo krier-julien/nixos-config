@@ -13,14 +13,37 @@
 
   # The 7950X3D's two CCDs are not interchangeable: one has the extra cache
   # (better for games), one clocks higher (better for compiles). Linux 6.13+
-  # exposes a knob for which one the scheduler prefers.
+  # exposes a knob for which one the scheduler prefers, and "cache" is the right
+  # default for a machine whose heaviest load is games.
   #
-  #   cat /sys/devices/system/cpu/amd_x3d_vcache/mode   -> cache | frequency
+  # The knob is NOT under /sys/devices/system/cpu — that was this file's first
+  # guess and it was wrong, which cost an evening. The driver
+  # (drivers/platform/x86/amd/x3d_vcache.c, module amd_3d_vcache) is a platform
+  # driver that binds to ACPI device AMDI0101 and hangs its attribute off that
+  # device via .dev_groups, so the real path is:
   #
-  # "cache" is the right default for a machine whose heaviest load is games.
-  # If this path doesn't exist on your kernel the service just no-ops.
+  #   cat /sys/bus/platform/drivers/amd_x3d_vcache/AMDI0101:00/amd_x3d_mode
+  #       -> frequency | cache
+  #
+  # Checking the wrong path is indistinguishable from missing hardware support:
+  # the old service logged "knob not present" at every boot on a machine where
+  # the driver was loaded and bound the whole time.
+  #
+  # The mode is set at module load, not afterwards. The driver takes an
+  # `x3d_mode` parameter and defaults it to "frequency", so setting it here
+  # closes the window where the machine runs on the wrong CCD preference between
+  # boot and a late oneshot service. The driver also re-applies it on resume by
+  # itself, so no suspend hook is needed.
+  boot.extraModprobeConfig = ''
+    options amd_3d_vcache x3d_mode=cache
+  '';
+
+  # The service no longer sets the mode — it verifies it, loudly. This is a
+  # 7950X3D; if the knob is missing, the driver did not bind and the modprobe
+  # option above silently did nothing, which is a real finding rather than a
+  # shrug. `journalctl -u amd-x3d-vcache-mode` is where you look.
   systemd.services.amd-x3d-vcache-mode = {
-    description = "Prefer the 3D V-Cache CCD for scheduling";
+    description = "Verify the 3D V-Cache CCD scheduling preference";
     wantedBy = ["multi-user.target"];
     after = ["multi-user.target"];
     serviceConfig = {
@@ -28,12 +51,23 @@
       RemainAfterExit = true;
     };
     script = ''
-      knob=/sys/devices/system/cpu/amd_x3d_vcache/mode
-      if [ -w "$knob" ]; then
-        echo cache > "$knob"
-        echo "amd_x3d_vcache mode set to: $(cat "$knob")"
-      else
-        echo "amd_x3d_vcache knob not present on this kernel — nothing to do."
+      found=
+      for knob in /sys/bus/platform/drivers/amd_x3d_vcache/*/amd_x3d_mode; do
+        [ -e "$knob" ] || continue
+        found=1
+        mode=$(cat "$knob")
+        if [ "$mode" != cache ]; then
+          echo "amd_x3d_mode is '$mode', expected 'cache' — correcting."
+          echo cache > "$knob"
+          mode=$(cat "$knob")
+        fi
+        echo "amd_x3d_mode = $mode ($knob)"
+      done
+      if [ -z "$found" ]; then
+        echo "WARNING: no amd_x3d_mode knob. The amd_3d_vcache driver did not"
+        echo "bind to ACPI device AMDI0101, so the 3D V-Cache CCD preference is"
+        echo "NOT being applied. Check: lsmod | grep vcache;"
+        echo "ls /sys/bus/acpi/devices/ | grep AMDI0101"
       fi
     '';
   };
