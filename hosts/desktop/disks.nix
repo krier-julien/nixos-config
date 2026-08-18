@@ -33,8 +33,8 @@
   # ⇩⇩ FILL THESE IN ON INSTALL DAY ⇩⇩
   # After mkfs, run:  lsblk -o NAME,FSTYPE,UUID
   # The btrfs UUID is shared by both member devices — that is expected.
-  pool = "/dev/disk/by-uuid/REPLACE-WITH-BTRFS-UUID";
-  esp = "/dev/disk/by-uuid/REPLACE-WITH-ESP-UUID";
+  pool = "/dev/disk/by-uuid/dd9b845d-2d13-41bb-bfd8-df324965409f";
+  esp = "/dev/disk/by-uuid/DA5C-A0CD";
 
   # zstd:1 is what the current install uses and it is the right call: level 1 is
   # fast enough to be free on an SN850X while still shrinking /nix noticeably.
