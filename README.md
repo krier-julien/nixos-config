@@ -107,18 +107,20 @@ Hashes are all real and committed. `scripts/update-hashes.sh` and
 
 ## Conservative choices for the first install
 
-Three places pick the boring option on purpose, because a build failure during
+These picked the boring option on purpose, because a build failure during
 `nixos-install` leaves you with no system and no generation to roll back to.
-All three are one-line changes once the machine boots:
+Each is a one-line change once the machine boots — the NVIDIA one has since
+been taken:
 
 | Setting | Now | Upgrade to |
 |---|---|---|
 | `boot.kernelPackages` | `linuxPackages` (nixpkgs default) | `linuxPackages_zen` |
-| `hardware.nvidia.package` | `nvidiaPackages.production` | `.beta` / `.latest` |
+| `hardware.nvidia.package` | ~~`nvidiaPackages.production`~~ → `.latest` (taken) | — |
 
 nixpkgs only guarantees that the NVIDIA module compiles against the *default*
-kernel. Pairing a zen kernel with a beta driver on install day is how you end up
-at a stage-1 shell.
+kernel. That is why the driver moved to `.latest` alone: pairing a zen kernel
+with a newer driver is how you end up at a stage-1 shell. If a rebuild ever dies
+compiling the NVIDIA module, put `.production` back.
 
 CurseForge's pinned hash also goes stale on every upstream release, because they
 publish only a "latest" URL. `scripts/update-curseforge.sh` re-pins it.
