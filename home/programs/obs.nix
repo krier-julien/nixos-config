@@ -4,6 +4,43 @@
   programs.obs-studio = {
     enable = true;
 
+    # ── The NVIDIA explicit-sync crash ─────────────────────────────────────
+    # Opening a preview projector or the multiview kills OBS outright on
+    # NVIDIA + Wayland, with:
+    #
+    #   wp_linux_drm_syncobj_surface_v1: error 4: explicit sync is used,
+    #   but no acquire point is set
+    #
+    # OBS hands Qt a wl_surface it has already bound an OpenGL context to;
+    # Qt then commits an SHM buffer to it, which is illegal under explicit
+    # sync and the compositor disconnects the client.
+    # (obsproject/obs-studio#11641, NVIDIA/egl-wayland#142.)
+    #
+    # __NV_DISABLE_EXPLICIT_SYNC=1 turns the driver's explicit-sync support
+    # off, which sidesteps it. It is set on OBS ONLY, deliberately — explicit
+    # sync is what removed the flicker and stutter from NVIDIA's Wayland path
+    # generally, so making this a session-wide variable would trade a bug you
+    # hit on purpose for one you hit constantly.
+    #
+    # The wrapper below goes around the plain package; home-manager then wraps
+    # THAT again with the plugin paths (programs.obs-studio.finalPackage =
+    # wrapOBS cfg.package). Wrapping rather than overriding attributes keeps
+    # the binary cache: overrideAttrs would rebuild all of OBS from source on
+    # every bump.
+    package = pkgs.symlinkJoin {
+      name = "obs-studio-no-explicit-sync";
+      paths = [pkgs.obs-studio];
+      nativeBuildInputs = [pkgs.makeWrapper];
+      postBuild = ''
+        wrapProgram $out/bin/obs \
+          --set-default __NV_DISABLE_EXPLICIT_SYNC 1
+      '';
+      # symlinkJoin does not carry these over on its own, and wrapOBS reads
+      # both off whatever package it is handed.
+      inherit (pkgs.obs-studio) meta;
+      passthru = pkgs.obs-studio.passthru or {};
+    };
+
     plugins = with pkgs.obs-studio-plugins; [
       # Capture a SPECIFIC PipeWire node rather than "whatever the default sink
       # is". This is the plugin that makes the Elgato audio source selectable by

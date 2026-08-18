@@ -1,3 +1,30 @@
+# ── Steam and the 4K TV ─────────────────────────────────────────────────────
+# The desktop client comes up at half size on the LG G3 and there is nothing in
+# this file that can fix it. Worth writing down, because the obvious fixes are
+# all dead ends now:
+#
+#   * The compositor cannot scale it. Steam is an X11 client, and
+#     `xwayland.force_zero_scaling` (../../home/hyprland.nix) deliberately
+#     stops Hyprland from upscaling X11 windows — that setting is what keeps
+#     Proton games rendering at a real 3840x2160 instead of a 1080p image blown
+#     up 2x. Turning it off to make Steam's menus bigger would cost you the
+#     resolution of every game. Hyprland has no per-window scale rule either.
+#   * STEAM_FORCE_DESKTOPUI_SCALING=2 does nothing. Valve removed it, and the
+#     `-forcedesktopscaling` launch flag with it, in the July 2025 client
+#     (ValveSoftware/steam-for-linux#12196).
+#   * GDK_SCALE=2 — which IS set now, and does fix other X11 apps — is ignored
+#     by Steam specifically. Its UI is CEF, not GTK.
+#
+# What replaced all of it is a slider inside the client:
+#
+#     Steam → Settings → Accessibility → UI Scale
+#
+# Set it once and Steam stores it in ~/.local/share/Steam/config/config.vdf.
+# That file is Steam's own mutable state, rewritten whenever the client exits,
+# so it is deliberately NOT managed from here: home-manager would either fight
+# the client for it or hand it a read-only symlink and break the setting
+# entirely — the same failure that was producing the login popups from
+# Caelestia (see ../../home/caelestia.nix).
 {pkgs, ...}: {
   programs.steam = {
     enable = true;

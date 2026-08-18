@@ -69,6 +69,27 @@
         {_args = ["XCURSOR_THEME" "Bibata-Modern-Classic"];}
         {_args = ["XCURSOR_SIZE" "24"];}
         {_args = ["HYPRCURSOR_SIZE" "24"];}
+
+        # The other half of the HiDPI XWayland recipe. `force_zero_scaling`
+        # below stops Hyprland from upscaling X11 windows — that is what keeps
+        # a Proton game rendering at the panel's real 3840x2160 instead of a
+        # blurry 1920x1080 blown up 2x. The cost is that XWayland apps are then
+        # handed raw pixels and have to scale THEMSELVES, and until now nothing
+        # told them to, which is why everything X11 came up half-size on the
+        # 55" TV.
+        #
+        # GDK_SCALE is the documented fix (wiki.hypr.land → Configuring →
+        # XWayland). It is read by GTK's X11 backend only: Wayland-native GTK
+        # apps take their scale from the compositor and ignore it, so this
+        # cannot double-scale anything.
+        #
+        # Not set here on purpose:
+        #   QT_SCALE_FACTOR — Qt reads it on Wayland too, so it WOULD
+        #     double-scale Caelestia's shell (Quickshell is Qt).
+        #   STEAM_FORCE_DESKTOPUI_SCALING — Valve deleted it in July 2025
+        #     (ValveSoftware/steam-for-linux#12196). See ../modules/nixos/
+        #     gaming.nix for what replaced it.
+        {_args = ["GDK_SCALE" "2"];}
       ];
 
       # ── Options ─────────────────────────────────────────────────────────
@@ -213,6 +234,46 @@
       # Matching properties go in `match`; everything else is an effect. Rules
       # are applied top to bottom, last match wins, so keep the broad ones last.
       window_rule = [
+        # ── Daily apps → fixed workspaces ─────────────────────────────────
+        # These five are launched at login by the autostart block below, but
+        # the placement is done HERE rather than there, because a rule keyed on
+        # the window class also holds when you start the app by hand later —
+        # and, unlike the exec-time rule, it does not care how many times the
+        # process forks before it opens a window (Steam forks a lot).
+        #
+        # `silent` = put the window there without following it, so login does
+        # not yo-yo across five workspaces before settling.
+        #
+        # ⚠ If an app lands on the wrong workspace, its class is wrong here,
+        # not the rule. Read the real one off a running window with:
+        #     hyprctl clients | grep -E "class|title"
+        # The alternations below are deliberate: several of these apps report a
+        # different class depending on whether they came up on Wayland or on
+        # XWayland, and the reverse-DNS spellings come from the StartupWMClass
+        # in their nixpkgs desktop entries.
+        {
+          match.class = "(?i)^brave-(origin|browser)$";
+          workspace = "1 silent";
+        }
+        {
+          match.class = "(?i)^(pear-desktop|com\\.github\\.th-ch\\.youtube-music)$";
+          workspace = "2 silent";
+        }
+        {
+          # Deliberately NOT ^steam_app_.*$ — that is a game, and a game should
+          # open wherever you launched it from, not get dragged to workspace 3.
+          match.class = "^steam$";
+          workspace = "3 silent";
+        }
+        {
+          match.class = "(?i)^discord$";
+          workspace = "4 silent";
+        }
+        {
+          match.class = "^com\\.obsproject\\.Studio$";
+          workspace = "5 silent";
+        }
+
         # Games: no rounding, no blur, allow tearing (lower latency).
         {
           match.class = "^(steam_app_.*)$";
@@ -284,16 +345,12 @@
       ];
 
       # ── Workspace assignment ────────────────────────────────────────────
-      workspace_rule = [
-        {
-          workspace = "special:music";
-          on_created_empty = "pear-desktop";
-        }
-        {
-          workspace = "special:communication";
-          on_created_empty = "discord";
-        }
-      ];
+      # There is no `workspace_rule` any more, on purpose. It used to carry two
+      # `on_created_empty` entries that launched Pear Desktop and Discord the
+      # first time you opened `special:music` / `special:communication`. Both
+      # apps are now autostarted onto numbered workspaces (see `window_rule`
+      # above and the autostart block below); keeping the old rules as well
+      # would spawn a SECOND copy of each the first time those binds were hit.
     };
 
     # ── Autostart and keybinds ────────────────────────────────────────────
@@ -310,7 +367,24 @@
         hl.exec_cmd("${pkgs.wl-clipboard}/bin/wl-paste --type text --watch ${pkgs.cliphist}/bin/cliphist store")
         hl.exec_cmd("${pkgs.wl-clipboard}/bin/wl-paste --type image --watch ${pkgs.cliphist}/bin/cliphist store")
         hl.exec_cmd("${pkgs.bluez}/bin/mpris-proxy") -- bluetooth headset media keys → MPRIS
-        hl.exec_cmd("sleep 1 && ${pkgs.gammastep}/bin/gammastep -l 49.61:6.13") -- Luxembourg
+
+        -- ---- Daily apps, one per workspace ----
+        -- 1 Brave Origin | 2 Pear Desktop | 3 Steam | 4 Discord | 5 OBS
+        --
+        -- The workspace is ALSO pinned by class in `window_rule` above; this
+        -- is the belt to that pair of braces. hl.dsp.exec_cmd takes a table of
+        -- window-rule effects and applies them to the window the spawned PID
+        -- opens, which catches an app whose class regex up there is wrong —
+        -- but it is the rule, not this, that survives an app that forks before
+        -- opening its window. Neither alone is reliable for all five.
+        --
+        -- `silent` on both: the windows appear on their workspaces without
+        -- dragging focus along, so login settles on workspace 1.
+        hl.dispatch(hl.dsp.exec_cmd("brave-origin",  { workspace = "1 silent" }))
+        hl.dispatch(hl.dsp.exec_cmd("pear-desktop",  { workspace = "2 silent" }))
+        hl.dispatch(hl.dsp.exec_cmd("steam",         { workspace = "3 silent" }))
+        hl.dispatch(hl.dsp.exec_cmd("discord",       { workspace = "4 silent" }))
+        hl.dispatch(hl.dsp.exec_cmd("obs",           { workspace = "5 silent" }))
       end)
 
       local mod = "SUPER"
@@ -375,8 +449,13 @@
       hl.bind(mod .. " + mouse_up",   hl.dsp.focus({ workspace = "e-1" }))
 
       hl.bind(mod .. " + S", hl.dsp.workspace.toggle_special())
-      hl.bind(mod .. " + M", hl.dsp.workspace.toggle_special("music"))
-      hl.bind(mod .. " + D", hl.dsp.workspace.toggle_special("communication"))
+
+      -- M and D used to toggle special workspaces that launched Pear Desktop
+      -- and Discord the first time you opened them. Both apps now autostart
+      -- onto numbered workspaces, so the binds jump there instead: same
+      -- fingers, same app, and no second copy of it.
+      hl.bind(mod .. " + M", hl.dsp.focus({ workspace = 2 }))
+      hl.bind(mod .. " + D", hl.dsp.focus({ workspace = 4 }))
 
       -- ---- Capture ----
       -- `caelestia record` drives gpu-screen-recorder, which is installed with
