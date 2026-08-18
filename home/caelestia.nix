@@ -44,7 +44,7 @@
 
       general.apps = {
         terminal = ["foot"];
-        browser = ["firefox"];
+        browser = ["brave-origin"];
         explorer = ["thunar"];
         audio = ["pwvucontrol"];
       };
