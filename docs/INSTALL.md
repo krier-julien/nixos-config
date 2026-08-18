@@ -329,6 +329,19 @@ spaces and all, must come back on one line:
 systemctl --user show nxapi.service -p Environment
 ```
 
+If `nxapi nso auth` fails right after you paste the token link with:
+
+```
+Error: Remote configuration prevents Coral authentication
+```
+
+the packaged nxapi is too old, not your token. nxapi fetches a config from
+upstream before logging in, and upstream refuses Coral authentication to clients
+that predate Nintendo's current app version. npm's `latest` tag for nxapi is
+still the March 2023 release, so `pkgs/nxapi/default.nix` tracks the `next`
+prerelease channel instead — bump it there (the comment at the top of that file
+has the two commands) and rerun `./scripts/update-hashes.sh`.
+
 ### 7.2 Configure OBS
 
 Full detail is in the comments at the bottom of `home/programs/obs.nix`. The one

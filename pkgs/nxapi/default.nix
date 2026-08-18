@@ -8,7 +8,30 @@
 }:
 buildNpmPackage rec {
   pname = "nxapi";
-  version = "1.6.1";
+
+  # The `next` channel, deliberately — NOT the `latest` dist-tag.
+  #
+  # npm's `latest` for nxapi is still 1.6.1, published in March 2023. Upstream
+  # has developed on `next` ever since, and the two are three years apart.
+  #
+  # That gap is not cosmetic. Before authenticating, nxapi fetches a remote
+  # config from https://fancy.org.uk/api/nxapi/config, which carries the
+  # Nintendo Switch Online app version to impersonate. Upstream serves
+  # `"coral": null` to clients too old to talk to Nintendo's current Coral API,
+  # and nxapi then refuses to log in:
+  #
+  #     Error: Remote configuration prevents Coral authentication
+  #         at CoralApi.loginWithSessionToken (.../dist/api/coral.js)
+  #
+  # 1.6.1 stable pins znca_version 2.4.0; the current one is 2.12.0. So stable
+  # simply cannot authenticate any more — the failure is upstream policy, not a
+  # packaging bug, and no amount of re-pasting the token link fixes it.
+  #
+  # Bumping: the tag moves, so pick an explicit prerelease from
+  #   curl -s https://registry.npmjs.org/nxapi | jq -r '.["dist-tags"].next'
+  # and take its tarball hash from
+  #   curl -s https://registry.npmjs.org/nxapi | jq -r '.versions["<v>"].dist.integrity'
+  version = "1.6.1-next.254";
 
   # The npm tarball, not the git tree. Two reasons:
   #  1. `dist/` is already compiled in it, so there is no rollup/TypeScript
@@ -19,7 +42,7 @@ buildNpmPackage rec {
   #     hash below is exact rather than something you have to discover.
   src = fetchurl {
     url = "https://registry.npmjs.org/nxapi/-/nxapi-${version}.tgz";
-    hash = "sha512-fh0S2ztLWIus/M59YUltfhwZcH7yONwSP5mkujVpc3Ika0dKJhTfRuWdPu9OknQXBqDTsaUbIwC4cbrsxiCNcA==";
+    hash = "sha512-UVpXxLzkzOHr6F5tl3uWBJqeYYwod7pfC6PVdDUUKQZcCEoWaDlFLbGhRkUBqTlHlEGE16VEJlwUOCKrMDMOgw==";
   };
 
   # npm tarballs carry no lockfile, and buildNpmPackage requires one. Both
@@ -61,14 +84,21 @@ buildNpmPackage rec {
     cp ${./package-lock.json} package-lock.json
   '';
 
-  # ⚠ FILL THIS IN ONCE, ON THE FIRST BUILD.
-  # Nix cannot know the hash of the npm dependency set until it has fetched it.
-  # Build, let it fail, and paste the "got:" value it prints:
+  # ⚠ FILL THIS IN — it is fakeHash again after the version bump.
+  # Nix cannot know the hash of the npm dependency set until it has fetched it,
+  # and the set changed with the version. Build, let it fail, and paste the
+  # "got:" value it prints:
   #
   #   nix build .#nxapi 2>&1 | grep -A2 'got:'
   #
   # Or run ../../scripts/update-hashes.sh, which does exactly that.
-  npmDepsHash = "sha256-h5FLmY9kh76VbIlL2EYOcfhTq+GAa4Nub2+dfs6eYoc=";
+  npmDepsHash = lib.fakeHash;
+
+  # No install script here needs to run, and one of them wants the network:
+  # sharp's `node install/check` verifies its prebuilt binary, which npm has
+  # already placed via @img/sharp-linux-x64 from the lockfile. Nothing is built
+  # from source, so skip scripts rather than let one reach out of the sandbox.
+  npmFlags = ["--ignore-scripts"];
 
   # dist/ is prebuilt in the tarball and there is no build script to run.
   dontNpmBuild = true;
