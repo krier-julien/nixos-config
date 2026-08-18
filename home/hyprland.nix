@@ -53,10 +53,10 @@
       #   monitor = [{output = "DP-1"; mode = "2560x1440@240"; position = "0x0"; scale = "1";}];
       monitor = [
         {
-          output = "";
-          mode = "preferred";
+          output = "HDMI-A-1";
+          mode = "3840x2160@199.88";
           position = "auto";
-          scale = "1";
+          scale = "2";
         }
       ];
 
