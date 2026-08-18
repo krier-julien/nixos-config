@@ -13,11 +13,20 @@
 
   # ── Duty cycles ────────────────────────────────────────────────────────────
   # Change these, rebuild, done. Tune live first with:
-  #   sudo liquidctl --match "uni sl" set fan2 speed 70
+  #   sudo liquidctl --match "uni sl" set fan1 speed 70
   pumpDuty = 75;
+
+  # No fan2. That fan is wired to the Kraken's own fan header, not to the Uni
+  # hub, so hub port 2 is empty — setting a duty on it did nothing and left the
+  # port reporting 0 rpm in `liquidctl status`, which reads exactly like a dead
+  # fan. Leaving the entry out keeps status output honest: every port listed
+  # here should spin.
+  #
+  # The consequence is that that fan is NOT controlled from this file. It runs
+  # on the Kraken's firmware default (30 % duty, ~600 rpm) because the ExecStart
+  # below sets the Kraken's pump and never its fan. See the note at the bottom.
   fanDuties = {
     fan1 = 40;
-    fan2 = 60;
     fan3 = 40;
     fan4 = 45;
   };
@@ -83,4 +92,16 @@ in {
   # Confirm after the first boot anyway:
   #   systemctl is-enabled liquidctl && systemctl status liquidctl
   #   sudo liquidctl --unsafe=EXPERIMENTAL --match kraken status
+  #
+  # ── Not controlled here: the Kraken's fan channel ──────────────────────────
+  # ExecStart sets the Kraken's pump only, so its fan header runs at the
+  # firmware default. To take it over, check the experimental driver accepts the
+  # command at all before committing to it — if it errors, adding it to
+  # ExecStart makes the whole oneshot fail and NONE of the duties above get
+  # applied:
+  #
+  #   sudo liquidctl --unsafe=EXPERIMENTAL --match kraken set fan speed 50
+  #
+  # If that works, add a krakenFanDuty binding next to pumpDuty and a matching
+  # `set fan speed` entry to the ExecStart list, the same shape as the pump one.
 }
