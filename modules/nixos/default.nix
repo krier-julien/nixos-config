@@ -1,10 +1,9 @@
-# The system modules that are true of ANY machine running this config — the
-# desktop, and the VM used to test it.
+# The system modules that have nothing to do with this specific hardware.
 #
-# Hardware-specific modules (./cpu.nix, ./nvidia.nix, ./capture.nix,
+# The hardware-bound ones (./cpu.nix, ./nvidia.nix, ./capture.nix,
 # ./liquidctl.nix) and the games stack (./gaming.nix) are imported by
-# ../../hosts/desktop instead, so the VM doesn't try to talk to a 4090, a
-# Kraken, or a capture card that aren't there.
+# ../../hosts/desktop instead, so the split stays honest: anything in here
+# would work on any machine, anything in there needs this one.
 {...}: {
   imports = [
     ./boot.nix

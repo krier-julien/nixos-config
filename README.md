@@ -4,7 +4,6 @@ NixOS configuration for a single desktop: **Hyprland + Caelestia**, on a
 Ryzen 9 7950X3D / RTX 4090 / 64 GB DDR5 / 2× WD SN850X box.
 
 Installing from scratch? → **[docs/INSTALL.md](docs/INSTALL.md)**
-Trying it out first? → **[docs/TESTING.md](docs/TESTING.md)**
 
 ---
 
@@ -13,11 +12,13 @@ Trying it out first? → **[docs/TESTING.md](docs/TESTING.md)**
 - NixOS unstable, systemd-boot, `linux_zen`
 - One btrfs pool spanning both NVMe drives, zstd:1, zram swap
 - Hyprland under **uwsm**, greeted by **SDDM** with the `sddm-astronaut` theme
-- **Caelestia** shell from its official flake — bar, launcher, dashboard,
-  notifications, lock screen, Material You colours generated from the wallpaper
+- **Caelestia** shell — bar, launcher, dashboard, notifications, lock screen,
+  and Material You colours generated from the wallpaper. Built from
+  [AdiAmbassador's forks](https://github.com/AdiAmbassador/caelestia-aw) rather
+  than upstream, for animated wallpapers
 - NVIDIA open kernel modules, Wayland-native
 - Steam + gamescope + gamemode + ProtonPlus + MangoHud, ntsync on, CurseForge,
-  Equibop, OBS, Plezy, Pear Desktop
+  Discord, OBS, Plezy, Pear Desktop
 - The three hardware integrations this machine actually exists for:
   the **Elgato 4K X audio routing**, **liquidctl** fan/pump control, and
   **nxapi** Switch Rich Presence
@@ -25,39 +26,33 @@ Trying it out first? → **[docs/TESTING.md](docs/TESTING.md)**
 ## Layout
 
 ```
-flake.nix                      inputs, the overlay, two hosts via mkHost
-hosts/desktop/                 the real machine
+flake.nix                      inputs, the overlay, the one host
+hosts/desktop/
   default.nix                  hostname + which hardware modules to pull in
-  hardware-configuration.nix   kernel modules, firmware — hand-written from live hw
+  hardware-configuration.nix   kernel modules, firmware — read off the live hw
   disks.nix                    the btrfs pool  ← the only file you edit at install
-hosts/vm/                      throwaway test VM: no GPU, no capture card, no AIO
 modules/nixos/
-  default.nix                  the common set, imported by BOTH hosts
+  default.nix                  the hardware-agnostic set
     boot networking locale users nix-settings desktop audio fonts
-  cpu nvidia capture liquidctl gaming    ← desktop-only, imported by that host
+  cpu nvidia capture liquidctl gaming    ← this machine only, pulled in by the host
 home/
-  common.nix                   shared by both hosts (Caelestia, Hyprland, theme, shell)
-  default.nix                  desktop: common + apps + obs + the user services
-  vm.nix                       VM: common + a handful of test packages
-  caelestia.nix                the shell, via its official HM module
-  hyprland.nix                 the compositor config — YOURS, not Caelestia's
+  default.nix                  the only home entry point
+  caelestia.nix                the shell, plus the two package fixes it needs
+  hyprland.nix                 the compositor config — ours, not Caelestia's
   theme.nix                    GTK/Qt/cursor scaffolding for Caelestia to recolour
   programs/                    apps, shell, terminal, obs, mangohud
-  services/                    browser-clean-exit, elgato-monitor, nxapi, wallpaper-video
+  services/                    browser-clean-exit, elgato-monitor, nxapi
 pkgs/                          things nixpkgs doesn't have
   curseforge/                  AppImage, wrapped
   nxapi/                       npm, with a committed runtime-only lockfile
 scripts/                       hash refreshers
 docs/INSTALL.md                install day, start to finish
-docs/TESTING.md                how to check this before wiping anything
 ```
 
-## Hosts
-
-| Attribute | What it is |
-|---|---|
-| `julien-desktop` | The real machine. 7950X3D + 4090 + Elgato + Kraken. |
-| `nixos-vm` | A test VM. Same shell and desktop, none of the hardware modules. `nix build .#nixosConfigurations.nixos-vm.config.system.build.vm` builds a runnable QEMU image. |
+There is one host, `julien-desktop`: the real machine, 7950X3D + 4090 + Elgato
++ Kraken. There used to be a test VM alongside it; it was removed once the real
+machine was running, since a VM with no GPU and no capture card could not
+exercise the parts worth testing.
 
 ## Rebuilding
 
@@ -130,7 +125,7 @@ there even when you launch them by hand later:
 | Workspace | App |
 |---|---|
 | 1 | Brave Origin |
-| 2 | Equibop (Discord) |
+| 2 | Discord |
 | 3 | Steam |
 | 4 | OBS Studio |
 | 5 | Pear Desktop |
@@ -140,7 +135,7 @@ there even when you launch them by hand later:
 | `SUPER` + `1`…`9`, `0` | Go to workspace 1–10 |
 | `SUPER` + `ALT` + `1`…`9`, `0` | Send the window to workspace 1–10 |
 | `SUPER` + scroll wheel | Next / previous workspace |
-| `SUPER` + `D` | Jump to Equibop, i.e. Discord (workspace 2) |
+| `SUPER` + `D` | Jump to Discord (workspace 2) |
 | `SUPER` + `M` | Jump to music, i.e. Pear Desktop (workspace 5) |
 | `SUPER` + `S` | Toggle the special (scratchpad) workspace |
 
@@ -166,7 +161,7 @@ there even when you launch them by hand later:
 
 | Keys | Does |
 |---|---|
-| `SUPER` + `SHIFT` + `W` | Pick an animated wallpaper, or "None" for the static one |
+| `SUPER` + `SHIFT` + `W` | Open the shell's wallpaper picker (stills and animated) |
 
 ### In games (MangoHud, not Hyprland)
 
@@ -192,12 +187,12 @@ game. Configured in `home/programs/mangohud.nix`.
 
 ## Design notes
 
-**Caelestia owns the shell; this repo owns the compositor.** The official
-`caelestia-dots/shell` flake supplies the Quickshell bar/launcher/lockscreen and
-the theming engine. `home/hyprland.nix` is hand-written here, seeded from
-Caelestia's upstream keybinds so muscle memory carries over. The community "full
-dots" ports bundle a Hyprland config too, but the most complete one is archived
-and self-described as very experimental — not a base to build a daily driver on.
+**Caelestia owns the shell; this repo owns the compositor.** The Caelestia
+flake supplies the Quickshell bar, launcher, lock screen and theming engine.
+`home/hyprland.nix` is hand-written here, seeded from Caelestia's own keybinds
+so muscle memory carries over. The community "full dots" ports bundle a
+Hyprland config too, but the most complete one is archived and self-described as
+very experimental — not a base for a daily driver.
 
 **uwsm is load-bearing, not cosmetic.** It is what makes
 `graphical-session.target` actually get reached, and `nxapi.service` is bound to
@@ -205,7 +200,7 @@ that target. Drop uwsm and the Rich Presence silently stops working.
 
 **The Elgato audio design is two paths that end in different places.** An
 always-on `pw-loopback` to the headset, and OBS monitoring into a null sink that
-only the Discord client reads. That separation is the entire reason the Switch
+only Discord reads. That separation is the entire reason the Switch
 isn't heard twice. Both halves are documented at length in
 `modules/nixos/audio.nix` and `home/services/elgato-monitor.nix` — read those
 before changing either.
@@ -238,16 +233,26 @@ Steam's FHS through `extraPkgs`: the Vulkan layer has to exist inside the
 pressure-vessel container, and `MANGOHUD=1` without it is the usual reason the
 overlay appears to do nothing on NixOS.
 
-**Animated wallpapers layer over Caelestia rather than replacing it.** Drop
-`.mp4`/`.webm`/`.mkv` files into `~/Vidéos/wallpapers` — or `~/Images/wallpapers`
-next to the stills, or either spelled with a capital `W`, since all four are
-searched — and pick one with `SUPER`+`SHIFT`+`W`; the choice survives a reboot. mpvpaper runs on the
-layer-shell `bottom` layer — one above the `background` layer Caelestia draws
-its still wallpaper on, still below every window — so with nothing selected the
-desktop is exactly what it was. Picking a video also pulls a frame out with
-ffmpeg and feeds it to `caelestia wallpaper -f`, so the Material You palette
-regenerates from what is actually moving on screen. `home/services/
-wallpaper-video.nix`.
+**Animated wallpapers are the shell's job, not a service beside it.** Stills
+go in `~/Images/wallpapers`, videos in `~/Images/wallpapers/Animated`, and the
+picker (`SUPER`+`SHIFT`+`W`) shows them as two categories with thumbnails and a
+live preview. Picking either regenerates the Material You palette; for a video
+the colours come from an extracted frame.
+
+This is why the flake tracks
+[AdiAmbassador's forks](https://github.com/AdiAmbassador/caelestia-aw) of the
+Caelestia shell and CLI instead of upstream. It replaced a homegrown mpvpaper
+service that drew video on the layer above Caelestia's own wallpaper — it
+worked, but it was a second wallpaper system sitting next to the real one, with
+its own fuzzel menu and its own idea of where wallpapers live.
+
+The forks are Arch-first and their `nix/` directories came from upstream
+untouched, so the packaging does not know about the feature it adds.
+`home/caelestia.nix` closes the two gaps: QtMultimedia for the shell (the
+renderer is `import QtMultimedia`, no mpv anywhere) and ffmpeg for the CLI
+(thumbnails and palette extraction shell out to it). Both are runtime
+dependencies, so a missing one builds fine and fails silently later — that file
+says which symptom points at which.
 
 **The machine locks but never sleeps.** Idle handling is the shell's, not
 hypridle's — Caelestia moved it in-house, and a second idle daemon on the same

@@ -1,46 +1,47 @@
 # The Caelestia shell — bar, launcher, dashboard, notifications, lock screen,
-# and the Material You colour generation that recolours everything from the
-# wallpaper.
+# and the Material You colours that get regenerated from the wallpaper.
 #
-# This uses the OFFICIAL flake (github:caelestia-dots/shell) via its own
-# home-manager module. Deliberately NOT one of the community "full dots" ports:
-# those bundle a Hyprland config too, and the one that ports it most completely
-# is archived and self-described as very experimental. Here Caelestia owns the
-# shell, and ./hyprland.nix — which is yours, in this repo — owns the compositor.
+# Caelestia owns the shell. ./hyprland.nix, which is ours, owns the compositor.
+# The community "full dots" ports bundle a Hyprland config too; the most
+# complete one is archived and self-described as very experimental, so it is
+# not a base to build a daily driver on.
 #
-# ── Why the config files are written by hand ────────────────────────────────
-# `programs.caelestia.settings` and `.cli.settings` are NOT used below, even
-# though they exist. The module renders them through `xdg.configFile`, i.e. as
-# a symlink into the read-only nix store — and the shell rewrites its own
-# config file on every start:
+# ── Which Caelestia ────────────────────────────────────────────────────────
+# Not the official flake: ../flake.nix pulls AdiAmbassador's shell and cli
+# forks, which add animated wallpapers to the shell's own picker. See the
+# `caelestiaShell` / `caelestiaCli` block below for what that costs us.
+#
+# ── Why the config files are written by hand ───────────────────────────────
+# `programs.caelestia.settings` and `.cli.settings` exist, and are deliberately
+# not used. The module renders them through `xdg.configFile`, i.e. as symlinks
+# into the read-only store — and the shell rewrites its own config file on
+# every start:
 #
 #   "On every shell start, the config system rewrites the shell.json file it
 #    just read. The write comes from the auto-save hook, which treats the
 #    property changes delivered after a load as user edits."
 #       — caelestia-dots/shell PR #1838 (open, unmerged as of 2026-08)
 #
-# On an immutable file that write fails, and the shell raises a "Failed to save
-# config" toast at every login. THAT is the popup storm after entering your
-# password at the greeter. Same class of bug for cli.json.
+# Writing to an immutable file fails, and the shell toasts "Failed to save
+# config" at every login. That is the popup storm after the greeter. cli.json
+# has the same bug.
 #
-# It has a twin worth knowing about, because it produces near-identical popups
-# from the same place: the shell also toasts "Unknown option in config" for
-# every key it does not recognise, one per key, rather than ignoring it. Three
-# of the settings below were stale and were doing exactly that — see the ⚠
-# notes on `bar.statusIcons`, `general.apps` and the palette. If new popups
-# show up after a Caelestia bump, that is the first thing to suspect, and
+# There is a second popup source worth knowing, because it looks identical:
+# the shell toasts "Unknown option in config" once per key it does not
+# recognise, rather than ignoring it. Three settings below were stale and doing
+# exactly that — see the ⚠ notes on `bar.statusIcons`, `general.apps` and the
+# palette. After a Caelestia bump, suspect this first:
 #   journalctl --user -u caelestia -b
 # names the offending keys.
 #
-# So: the settings still live here, in Nix, as the single source of truth — but
-# they are *installed* as ordinary writable files at activation instead of
-# symlinked. The shell's pointless rewrite then succeeds silently, and every
-# `nixos-rebuild switch` puts the declared content back.
+# So the settings stay here in Nix as the source of truth, but get *installed*
+# as ordinary writable files at activation instead of symlinked. The shell's
+# pointless rewrite then succeeds silently, and every rebuild puts the declared
+# content back.
 #
-# Consequence worth knowing: anything you change from inside the shell's own
-# control centre is overwritten on the next rebuild. Change it here instead.
-# When PR #1838 lands upstream this whole activation block can go back to being
-# plain `programs.caelestia.settings`.
+# The trade: anything changed from inside the shell's control centre is
+# overwritten on the next rebuild. Change it here instead. When PR #1838 lands,
+# the activation block below can go back to plain `programs.caelestia.settings`.
 {
   config,
   pkgs,
@@ -48,6 +49,46 @@
   inputs,
   ...
 }: let
+  inherit (pkgs.stdenv.hostPlatform) system;
+
+  # ── Patching the forks' Nix packaging ──────────────────────────────────────
+  # AdiAmbassador's forks are built for Arch: their install script `pacman -S`s
+  # what the video wallpapers need and gets on with it. The nix/ directories
+  # came along from upstream untouched, so on NixOS two dependencies are simply
+  # missing, and the feature fails at runtime rather than at build time — which
+  # is the annoying way round. Both gaps are patched here rather than by
+  # forking again.
+  #
+  # If video wallpapers build fine but do nothing, these two are where to look:
+  #   * a black background and a QML "module QtMultimedia is not installed" in
+  #     `journalctl --user -u caelestia` → the shell override
+  #   * wallpapers listed but no thumbnails, and no colour change on selection
+  #     → the cli override
+  caelestiaCli =
+    inputs.caelestia-cli.packages.${system}.default.overrideAttrs (old: {
+      # utils/wallpaper.py shells out to `ffmpeg` and `ffprobe` to pull a frame
+      # for the thumbnail and for the Material You palette. Neither is in the
+      # upstream package because upstream has no video code. Same mechanism the
+      # package already uses for grim/slurp/fuzzel, so nothing new is invented.
+      propagatedBuildInputs =
+        (old.propagatedBuildInputs or []) ++ [pkgs.ffmpeg-headless];
+    });
+
+  # modules/background/VideoWallpaper.qml is `import QtMultimedia` — MediaPlayer
+  # and VideoOutput, no mpv anywhere. Adding qtmultimedia to buildInputs is
+  # enough because wrapQtAppsHook (already in nativeBuildInputs) then puts both
+  # its QML module and its media backend plugin on the wrapper's search paths.
+  # Overriding the `quickshell` argument would be the other way in, but it is
+  # more fragile: nix/default.nix already calls `withModules` on it.
+  caelestiaShell =
+    (inputs.caelestia-shell.packages.${system}.caelestia-shell.override {
+      withCli = true;
+      caelestia-cli = caelestiaCli;
+    })
+    .overrideAttrs (old: {
+      buildInputs = (old.buildInputs or []) ++ [pkgs.qt6.qtmultimedia];
+    });
+
   # ── shell.json ─────────────────────────────────────────────────────────────
   # Everything not listed keeps Caelestia's own default.
   shellSettings = {
@@ -99,6 +140,20 @@
         showWindows = true;
       };
     };
+
+    # ── Where the picker looks ─────────────────────────────────────────────
+    # Set explicitly, because the default is wrong on this machine and fails
+    # silently. Upstream defaults `wallpaperDir` to Qt's PicturesLocation +
+    # "/Wallpapers" (plugin/src/Caelestia/Config/userpaths.hpp), and Qt takes
+    # PicturesLocation from XDG — which is `~/Images` here, since the locale is
+    # fr_LU. So the default resolves to `~/Images/Wallpapers`, capital W, while
+    # everything in this repo has always created `~/Images/wallpapers`. On
+    # btrfs those are two different directories, and the one the shell reads is
+    # the empty one.
+    #
+    # Naming the path here ends the guessing: no locale, no capitalisation, no
+    # difference between what Nix creates and what the shell opens.
+    paths.wallpaperDir = "~/Images/wallpapers";
 
     # No `browser` here. It looks like it belongs next to the others, but the
     # shell has never had one — the apps it knows about are terminal, audio,
@@ -191,10 +246,11 @@
     theme = {
       enableTerm = true;
       enableHypr = true;
-      # Compiles the palette with `sass` and drops it into every Discord-mod
-      # theme directory the CLI knows by name — Equicord, Vencord,
-      # BetterDiscord, equibop, vesktop, legcord — so Equibop (see
-      # ./programs/apps.nix) is covered without naming it anywhere.
+      # Compiles the palette with `sass` into the theme directories the CLI
+      # knows by name (Vencord, BetterDiscord, Equicord, vesktop, equibop,
+      # legcord). The official client reads none of them, so this is a no-op
+      # today — left on because it costs nothing and works the moment a mod
+      # is installed.
       enableDiscord = true;
       enableFuzzel = true;
       enableBtop = true;
@@ -215,10 +271,14 @@ in {
 
   programs.caelestia = {
     enable = true;
+    package = caelestiaShell;
 
     # Adds the `caelestia` CLI to PATH: screenshot, record, clipboard, emoji,
     # wallpaper, scheme. The Hyprland keybinds in ./hyprland.nix call it.
-    cli.enable = true;
+    cli = {
+      enable = true;
+      package = caelestiaCli;
+    };
 
     # Run the shell as a systemd user service rather than an exec-once. It then
     # restarts on crash and you get `journalctl --user -u caelestia` when
@@ -253,7 +313,21 @@ in {
         "${caelestiaDir}/cli.json"
     '';
 
-  # Wallpapers. `caelestia wallpaper` reads from here and regenerates the whole
-  # colour scheme from whichever one you pick.
-  home.file."Images/wallpapers/.keep".text = "";
+  # ── Where wallpapers go ────────────────────────────────────────────────────
+  # Two directories, and the split is what the picker's two categories are:
+  #
+  #   ~/Images/wallpapers            stills
+  #   ~/Images/wallpapers/Animated   .mp4 / .webm / .mkv
+  #
+  # `Animated` is hardcoded in the fork (services/Wallpapers.qml looks for
+  # `Paths.wallsdir + "/Animated"`), capital A included — renaming it here just
+  # empties the animated tab. Both are created empty so the picker has
+  # somewhere to look before you have put anything in them.
+  #
+  # Either kind regenerates the whole colour scheme when you pick it; for a
+  # video the palette comes from one extracted frame.
+  home.file = {
+    "Images/wallpapers/.keep".text = "";
+    "Images/wallpapers/Animated/.keep".text = "";
+  };
 }

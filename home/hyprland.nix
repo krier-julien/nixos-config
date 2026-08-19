@@ -21,9 +21,9 @@
 #
 # The keybinds below reproduce Caelestia's upstream cheat sheet, so muscle
 # memory carries over. The shell is driven through Hyprland's `global`
-# dispatcher (`caelestia:launcher`, `caelestia:lock`, …) — those names are
+# dispatcher (`caelestia:launcher`, `caelestia:lock`, …). Those names are
 # registered by the running shell, so a bind that "does nothing" almost always
-# means the shell isn't up, not that the bind is wrong. Check with:
+# means the shell isn't up rather than that the bind is wrong:
 #   systemctl --user status caelestia
 {
   lib,
@@ -319,10 +319,7 @@ in {
           workspace = "1 silent";
         }
         {
-          # Equibop reports `equibop` on Wayland and `Equibop` (the
-          # StartupWMClass in its nixpkgs desktop entry) otherwise, hence the
-          # case-insensitive match.
-          match.class = "(?i)^equibop$";
+          match.class = "(?i)^discord$";
           workspace = "2 silent";
         }
         {
@@ -454,12 +451,11 @@ in {
 
       # ── Workspace assignment ────────────────────────────────────────────
       # There is no `workspace_rule` any more, on purpose. It used to carry two
-      # `on_created_empty` entries that launched Pear Desktop and the Discord
-      # client the first time you opened `special:music` /
-      # `special:communication`. Both apps are now autostarted onto numbered
-      # workspaces (see `window_rule` above and the autostart block below);
-      # keeping the old rules as well would spawn a SECOND copy of each the
-      # first time those binds were hit.
+      # `on_created_empty` entries that launched Pear Desktop and Discord the
+      # first time you opened `special:music` / `special:communication`. Both
+      # now autostart onto numbered workspaces (see `window_rule` above and the
+      # autostart block below), and keeping the old rules would open a second
+      # copy of each the first time those binds were hit.
     };
 
     # ── Autostart and keybinds ────────────────────────────────────────────
@@ -478,7 +474,7 @@ in {
         hl.exec_cmd("${pkgs.bluez}/bin/mpris-proxy") -- bluetooth headset media keys → MPRIS
 
         -- ---- Daily apps, one per workspace ----
-        -- 1 Brave Origin | 2 Equibop | 3 Steam | 4 OBS | 5 Pear Desktop
+        -- 1 Brave Origin | 2 Discord | 3 Steam | 4 OBS | 5 Pear Desktop
         --
         -- The workspace is ALSO pinned by class in `window_rule` above; this
         -- is the belt to that pair of braces. hl.dsp.exec_cmd takes a table of
@@ -490,7 +486,7 @@ in {
         -- `silent` on both: the windows appear on their workspaces without
         -- dragging focus along, so login settles on workspace 1.
         hl.dispatch(hl.dsp.exec_cmd("brave-origin",  { workspace = "1 silent" }))
-        hl.dispatch(hl.dsp.exec_cmd("equibop",       { workspace = "2 silent" }))
+        hl.dispatch(hl.dsp.exec_cmd("discord",       { workspace = "2 silent" }))
         hl.dispatch(hl.dsp.exec_cmd("steam",         { workspace = "3 silent" }))
         hl.dispatch(hl.dsp.exec_cmd("obs",           { workspace = "4 silent" }))
         hl.dispatch(hl.dsp.exec_cmd("pear-desktop",  { workspace = "5 silent" }))
@@ -559,11 +555,10 @@ in {
 
       hl.bind(mod .. " + S", hl.dsp.workspace.toggle_special())
 
-      -- M and D used to toggle special workspaces that launched Pear Desktop
-      -- and the Discord client the first time you opened them. Both apps now
-      -- autostart onto numbered workspaces, so the binds jump there instead:
-      -- same fingers, same app, and no second copy of it.
-      -- M = music = Pear Desktop (5), D = Discord = Equibop (2).
+      -- M and D used to open special workspaces that launched Pear Desktop
+      -- and Discord on first use. Both autostart onto numbered workspaces now,
+      -- so the binds just jump there: same fingers, same app, no second copy.
+      -- M = music = Pear Desktop (5), D = Discord (2).
       hl.bind(mod .. " + M", hl.dsp.focus({ workspace = 5 }))
       hl.bind(mod .. " + D", hl.dsp.focus({ workspace = 2 }))
 
@@ -578,10 +573,12 @@ in {
       hl.bind(mod .. " + SHIFT + C",       hl.dsp.exec_cmd("hyprpicker -a"))
 
       -- ---- Wallpaper ----
-      -- Picks an .mp4/.webm/.mkv from ~/Vidéos/wallpapers and plays it as the
-      -- desktop background, or "None" to fall back to the static one. See
-      -- ./services/wallpaper-video.nix.
-      hl.bind(mod .. " + SHIFT + W", hl.dsp.exec_cmd("pkill fuzzel || wallpaper-video"))
+      -- Opens Nexus, the shell's own wallpaper-and-style window, where stills
+      -- and animated wallpapers sit in separate categories. This used to be a
+      -- fuzzel menu driving mpvpaper; the shell does the whole job now, so the
+      -- key is the same and the script it called is gone. See ./caelestia.nix
+      -- for which directories the two categories read.
+      hl.bind(mod .. " + SHIFT + W", hl.dsp.global("caelestia:nexus"))
 
       -- ---- Clipboard / emoji ----
       hl.bind(mod .. " + V",      hl.dsp.exec_cmd("pkill fuzzel || caelestia clipboard"))
@@ -608,14 +605,12 @@ in {
   # The screen-share half of the portal. Not hyprland.lua — xdph reads its own
   # file, and it is the only place these knobs exist.
   #
-  # `allow_token_by_default` is the one that matters, and it is here because of
-  # the Discord client. An Electron app does not open ONE screencast session:
-  # Chromium enumerates sources for the picker, then opens a second session
-  # when the stream actually starts, so hyprland-share-picker appears two to
-  # four times for a single "Go Live". Upstream considers that correct
-  # behaviour and closed it won't-fix (xdg-desktop-portal-hyprland#11,
-  # Vesktop#583, #971). Equibop's `--ozone-platform=wayland` flag (see
-  # ./programs/apps.nix) removes one of those prompts; this removes the rest.
+  # `allow_token_by_default` is the one that matters, and Discord is why it is
+  # here. An Electron app does not open ONE screencast session: Chromium
+  # enumerates sources for the picker, then opens a second session when the
+  # stream actually starts, so hyprland-share-picker appears two to four times
+  # for a single "Go Live". Upstream calls that correct and closed it won't-fix
+  # (xdg-desktop-portal-hyprland#11, Vesktop#583, #971).
   #
   # The documented workaround is to tick "allow restore token" in the picker:
   # the later sessions then reuse the first choice instead of asking again.
