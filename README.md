@@ -139,9 +139,13 @@ there even when you launch them by hand later:
 | `SUPER` + `M` | Jump to music, i.e. Pear Desktop (workspace 5) |
 | `SUPER` + `S` | Toggle the special (scratchpad) workspace |
 
-The bar draws five workspace slots, not ten. Workspaces 6–10 still exist and
-`SUPER`+`6` still goes there — the bar just pages to 6–10 when you do, instead
-of reserving space for them the rest of the time.
+The bar draws six slots: the five apps above plus one empty workspace to work
+in. `SUPER`+`6` lands on the spare with the other five still on screen.
+
+Workspaces 7–10 still exist and the binds still reach them, but the bar pages
+in blocks of six, so going to 7 swaps the row for 7–12. It is a fixed-width
+widget, not Niri-style dynamic workspaces — `home/caelestia.nix` says what it
+would take to change that.
 
 ### Screenshots, recording, colours
 
