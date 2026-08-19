@@ -1,7 +1,23 @@
 # ── Steam and the 4K TV ─────────────────────────────────────────────────────
-# The desktop client comes up at half size on the LG G3 and there is nothing in
-# this file that can fix it. Worth writing down, because the obvious fixes are
-# all dead ends now:
+# The desktop client used to come up at half size on the LG G3. What fixes it
+# is one environment variable, and it is NOT set from this file — see
+# `sessionEnv` in ../../home/hyprland.nix:
+#
+#     GDK_SCALE=2
+#
+# Valve added a 2× client UI for HiDPI in 2018 and wired it to exactly that
+# variable. It looks like a GTK setting and Steam's UI is CEF, not GTK, which
+# is why it is easy to write off — but Steam reads it itself, independently of
+# any toolkit.
+#
+# The variable has to reach Steam by every launch path, not just one. Hyprland's
+# `hl.env` covers the processes Hyprland spawns; an app started from Caelestia's
+# launcher is a child of a systemd user service instead and sees only the user
+# manager's environment. That is why Steam scaled when it autostarted at login
+# and came up half-size when relaunched by hand. Both paths now agree, because
+# the same attrset is written to ~/.config/environment.d as well.
+#
+# The dead ends, written down so they are not rediscovered:
 #
 #   * The compositor cannot scale it. Steam is an X11 client, and
 #     `xwayland.force_zero_scaling` (../../home/hyprland.nix) deliberately
@@ -12,10 +28,8 @@
 #   * STEAM_FORCE_DESKTOPUI_SCALING=2 does nothing. Valve removed it, and the
 #     `-forcedesktopscaling` launch flag with it, in the July 2025 client
 #     (ValveSoftware/steam-for-linux#12196).
-#   * GDK_SCALE=2 — which IS set now, and does fix other X11 apps — is ignored
-#     by Steam specifically. Its UI is CEF, not GTK.
 #
-# What replaced all of it is a slider inside the client:
+# If GDK_SCALE ever stops being enough, the in-client slider is the fallback:
 #
 #     Steam → Settings → Accessibility → UI Scale
 #

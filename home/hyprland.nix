@@ -25,7 +25,58 @@
 # registered by the running shell, so a bind that "does nothing" almost always
 # means the shell isn't up, not that the bind is wrong. Check with:
 #   systemctl --user status caelestia
-{pkgs, ...}: {
+{
+  lib,
+  pkgs,
+  ...
+}: let
+  # ── The session environment, defined ONCE ───────────────────────────────
+  # These four are consumed twice below, and that is the whole point.
+  #
+  # `hl.env` only reaches processes Hyprland itself spawns — the autostart
+  # block, and anything a keybind execs. It does NOT reach an app started from
+  # Caelestia's launcher, because the shell runs as a systemd user service
+  # (../home/caelestia.nix) and its children inherit the *user manager's*
+  # environment, which was fixed at session start, before Hyprland ever read
+  # this file.
+  #
+  # That asymmetry is exactly the Steam bug: autostarted Steam scaled, and the
+  # same Steam relaunched from the launcher came up half-size, because
+  # GDK_SCALE=2 is what switches Steam's client into its 2× UI mode and only
+  # the autostart path was handing it over.
+  #
+  # So the same attrset is also written to ~/.config/environment.d, which the
+  # systemd user manager reads at login. Every launch path then agrees.
+  sessionEnv = {
+    XCURSOR_THEME = "Bibata-Modern-Classic";
+    XCURSOR_SIZE = "24";
+    HYPRCURSOR_SIZE = "24";
+
+    # The other half of the HiDPI XWayland recipe. `force_zero_scaling` below
+    # stops Hyprland from upscaling X11 windows — that is what keeps a Proton
+    # game rendering at the panel's real 3840x2160 instead of a blurry
+    # 1920x1080 blown up 2x. The cost is that XWayland apps are then handed raw
+    # pixels and have to scale THEMSELVES, and nothing told them to, which is
+    # why everything X11 came up half-size on the 55" TV.
+    #
+    # GDK_SCALE is the documented fix (wiki.hypr.land → Configuring →
+    # XWayland). It is read by GTK's X11 backend, and — separately — by Steam,
+    # which has used it since 2018 as the switch for its 2× client UI.
+    #
+    # Not set here on purpose:
+    #   QT_SCALE_FACTOR — Qt reads it on Wayland too, so it WOULD double-scale
+    #     Caelestia's shell (Quickshell is Qt).
+    #   STEAM_FORCE_DESKTOPUI_SCALING — Valve deleted it in July 2025
+    #     (ValveSoftware/steam-for-linux#12196). See ../modules/nixos/
+    #     gaming.nix for what replaced it.
+    GDK_SCALE = "2";
+  };
+in {
+  # ~/.config/environment.d/10-home-manager.conf. Read by the systemd user
+  # manager when it starts, so every user service — and everything those
+  # services spawn, Caelestia's launcher included — inherits these.
+  systemd.user.sessionVariables = sessionEnv;
+
   wayland.windowManager.hyprland = {
     enable = true;
 
@@ -63,34 +114,12 @@
       # ── Environment ─────────────────────────────────────────────────────
       # The NVIDIA/toolkit variables live in modules/nixos/nvidia.nix so they
       # apply to the greeter and to non-Hyprland sessions too. Only genuinely
-      # compositor-scoped things belong here. `hl.env` takes two arguments, so
-      # each entry is spelled with `_args`.
-      env = [
-        {_args = ["XCURSOR_THEME" "Bibata-Modern-Classic"];}
-        {_args = ["XCURSOR_SIZE" "24"];}
-        {_args = ["HYPRCURSOR_SIZE" "24"];}
-
-        # The other half of the HiDPI XWayland recipe. `force_zero_scaling`
-        # below stops Hyprland from upscaling X11 windows — that is what keeps
-        # a Proton game rendering at the panel's real 3840x2160 instead of a
-        # blurry 1920x1080 blown up 2x. The cost is that XWayland apps are then
-        # handed raw pixels and have to scale THEMSELVES, and until now nothing
-        # told them to, which is why everything X11 came up half-size on the
-        # 55" TV.
-        #
-        # GDK_SCALE is the documented fix (wiki.hypr.land → Configuring →
-        # XWayland). It is read by GTK's X11 backend only: Wayland-native GTK
-        # apps take their scale from the compositor and ignore it, so this
-        # cannot double-scale anything.
-        #
-        # Not set here on purpose:
-        #   QT_SCALE_FACTOR — Qt reads it on Wayland too, so it WOULD
-        #     double-scale Caelestia's shell (Quickshell is Qt).
-        #   STEAM_FORCE_DESKTOPUI_SCALING — Valve deleted it in July 2025
-        #     (ValveSoftware/steam-for-linux#12196). See ../modules/nixos/
-        #     gaming.nix for what replaced it.
-        {_args = ["GDK_SCALE" "2"];}
-      ];
+      # compositor-scoped things belong here.
+      #
+      # `sessionEnv` (top of this file) is rendered into `hl.env` calls, which
+      # take two arguments each — hence the `_args` spelling. The same attrset
+      # also goes to environment.d, so the launcher agrees with the autostart.
+      env = lib.mapAttrsToList (name: value: {_args = [name value];}) sessionEnv;
 
       # ── Options ─────────────────────────────────────────────────────────
       # Everything here lands in a single hl.config{} call.
@@ -108,7 +137,17 @@
           };
           layout = "dwindle";
           resize_on_border = true;
-          allow_tearing = true; # opt-in per-window below, for games
+          # Tearing is OFF, and that is a considered choice, not an oversight.
+          # It buys one thing — a few ms of latency in a game whose frame rate
+          # is above the refresh rate — by letting a scanout show two frames at
+          # once. That trade only pays in twitch/competitive play.
+          #
+          # It also fights the G-Sync setup below. Hyprland cannot do both at
+          # once in any useful way: with tearing on, a game that runs past the
+          # panel's max refresh makes VRR bounce between max and min refresh
+          # (hyprwm/Hyprland discussion #13244), which on an OLED is visible as
+          # brightness pumping. VRR is the better half of that pair here.
+          allow_tearing = false;
         };
 
         decoration = {
@@ -159,7 +198,31 @@
           disable_hyprland_logo = true;
           disable_splash_rendering = true;
           force_default_wallpaper = 0;
-          vrr = 1; # adaptive sync on fullscreen
+          # G-Sync. 0 = off, 1 = always on, 2 = fullscreen only, 3 = fullscreen
+          # only when the window declares game/video content.
+          #
+          # This was 1 — always on — despite the comment next to it claiming
+          # "fullscreen". Always-on VRR is what makes an OLED flicker: panel
+          # brightness varies slightly with refresh rate, so a desktop whose
+          # refresh tracks whatever is animating (a cursor, a scroll, a video
+          # at 24fps) pumps the brightness several times a second. The LG G3 is
+          # a WOLED panel and shows this clearly in dark content.
+          #
+          # 2 confines VRR to a fullscreen window, i.e. to games, which is
+          # where the frame pacing actually matters. 3 would be tighter still,
+          # but it depends on the client declaring a content type through
+          # content-type-v1, and no XWayland/Proton game does — it would leave
+          # you with VRR effectively off.
+          #
+          # Two things to set outside this file, or none of it does anything:
+          #   * On the TV: Settings → General → Devices → HDMI Settings →
+          #     turn on "HDMI Deep Colour"/4K@120 for the port, then Game
+          #     Optimiser → VRR/G-Sync on.
+          #   * Cap the in-game frame rate a few fps below the panel maximum.
+          #     VRR only helps below max refresh; above it you are back to
+          #     v-sync latency or, with tearing, to the bouncing described
+          #     above. `hyprctl monitors` prints the mode actually in use.
+          vrr = 2;
           focus_on_activate = true;
           # Formerly new_window_takes_over_fullscreen. 2 = un-fullscreen the
           # covering window when a tiled window asks for focus.
@@ -256,7 +319,7 @@
           workspace = "1 silent";
         }
         {
-          match.class = "(?i)^(pear-desktop|com\\.github\\.th-ch\\.youtube-music)$";
+          match.class = "(?i)^discord$";
           workspace = "2 silent";
         }
         {
@@ -266,21 +329,43 @@
           workspace = "3 silent";
         }
         {
-          match.class = "(?i)^discord$";
+          match.class = "^com\\.obsproject\\.Studio$";
           workspace = "4 silent";
         }
         {
-          match.class = "^com\\.obsproject\\.Studio$";
+          match.class = "(?i)^(pear-desktop|com\\.github\\.th-ch\\.youtube-music)$";
           workspace = "5 silent";
         }
 
-        # Games: no rounding, no blur, allow tearing (lower latency).
+        # ── Anything Steam launches ───────────────────────────────────────
+        # Proton gives every window of a title the same class, `steam_app_<id>`
+        # — the game AND the publisher launcher that runs before it. So the
+        # cosmetic half applies to all of them (a launcher loses nothing by
+        # having square corners and no blur behind it) …
         {
           match.class = "^(steam_app_.*)$";
-          immediate = true;
-          fullscreen = true;
           no_blur = true;
           rounding = 0;
+        }
+
+        # … and the fullscreen half is withheld from the launchers, which is
+        # the whole point of this pair. Forcing a 900x600 Ubisoft/EA/Rockstar
+        # window to fill a 55" panel stretches it into something unreadable.
+        #
+        # The class cannot separate them, so the title has to, and `negative:`
+        # is Hyprland's "match when this regex does NOT". The list is a
+        # heuristic and it is meant to be edited: when a launcher slips through
+        # and comes up fullscreen, read its real title off the running window
+        #
+        #     hyprctl clients | grep -E "class|title"
+        #
+        # and add it. SUPER+F un-fullscreens it in the meantime.
+        {
+          match = {
+            class = "^(steam_app_.*)$";
+            title = "negative:(?i).*(launcher|bootstrap|setup|installer|updater|patcher|crash handler|configuration tool|battle\\.net|ubisoft connect|uplay|ea app|ea desktop|rockstar games|social club|paradox|easyanticheat).*";
+          };
+          fullscreen = true;
         }
 
         # Steam's own chrome misbehaves as a tiled window.
@@ -369,7 +454,7 @@
         hl.exec_cmd("${pkgs.bluez}/bin/mpris-proxy") -- bluetooth headset media keys → MPRIS
 
         -- ---- Daily apps, one per workspace ----
-        -- 1 Brave Origin | 2 Pear Desktop | 3 Steam | 4 Discord | 5 OBS
+        -- 1 Brave Origin | 2 Discord | 3 Steam | 4 OBS | 5 Pear Desktop
         --
         -- The workspace is ALSO pinned by class in `window_rule` above; this
         -- is the belt to that pair of braces. hl.dsp.exec_cmd takes a table of
@@ -381,10 +466,10 @@
         -- `silent` on both: the windows appear on their workspaces without
         -- dragging focus along, so login settles on workspace 1.
         hl.dispatch(hl.dsp.exec_cmd("brave-origin",  { workspace = "1 silent" }))
-        hl.dispatch(hl.dsp.exec_cmd("pear-desktop",  { workspace = "2 silent" }))
+        hl.dispatch(hl.dsp.exec_cmd("discord",       { workspace = "2 silent" }))
         hl.dispatch(hl.dsp.exec_cmd("steam",         { workspace = "3 silent" }))
-        hl.dispatch(hl.dsp.exec_cmd("discord",       { workspace = "4 silent" }))
-        hl.dispatch(hl.dsp.exec_cmd("obs",           { workspace = "5 silent" }))
+        hl.dispatch(hl.dsp.exec_cmd("obs",           { workspace = "4 silent" }))
+        hl.dispatch(hl.dsp.exec_cmd("pear-desktop",  { workspace = "5 silent" }))
       end)
 
       local mod = "SUPER"
@@ -454,8 +539,9 @@
       -- and Discord the first time you opened them. Both apps now autostart
       -- onto numbered workspaces, so the binds jump there instead: same
       -- fingers, same app, and no second copy of it.
-      hl.bind(mod .. " + M", hl.dsp.focus({ workspace = 2 }))
-      hl.bind(mod .. " + D", hl.dsp.focus({ workspace = 4 }))
+      -- M = music = Pear Desktop (5), D = Discord (2).
+      hl.bind(mod .. " + M", hl.dsp.focus({ workspace = 5 }))
+      hl.bind(mod .. " + D", hl.dsp.focus({ workspace = 2 }))
 
       -- ---- Capture ----
       -- `caelestia record` drives gpu-screen-recorder, which is installed with
