@@ -191,6 +191,8 @@
     theme = {
       enableTerm = true;
       enableHypr = true;
+      # Writes the palette into Vencord's theme directory, which is what
+      # Vesktop (see ./programs/apps.nix) reads — not the official client.
       enableDiscord = true;
       enableFuzzel = true;
       enableBtop = true;

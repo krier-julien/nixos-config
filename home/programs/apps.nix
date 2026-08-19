@@ -1,12 +1,19 @@
 {pkgs, ...}: {
   home.packages = with pkgs; [
     # ── Communications ──────────────────────────────────────────────────
-    # The OFFICIAL client, deliberately. It is the one proven on the old
-    # machine to send app audio on Linux screen share (labelled "System
-    # Audio", scoped to the shared window) — which is exactly what the
-    # OBS→Discord path depends on. Vesktop/Equibop use a different mechanism
-    # (venmic) that would need re-verifying against this setup.
-    discord
+    # Vesktop: the Vencord-flavoured Discord client, replacing the official
+    # one. It ships Vencord built in, so themes — including Caelestia's, see
+    # ../theme.nix — apply without patching the app on every update, and it
+    # screen-shares through the xdg-desktop-portal (see
+    # ../../modules/nixos/desktop.nix) rather than needing XWayland.
+    #
+    # ⚠ Screen-share audio works differently here. The official client sends
+    # app audio through Electron's own capture ("System Audio", scoped to the
+    # shared window); Vesktop uses venmic, which pulls the audio straight off
+    # PipeWire. It is bundled with the nixpkgs package and needs no extra
+    # config, but the OBS→Discord path in ../../modules/nixos/audio.nix has
+    # NOT been re-verified against it — see step 4 in ./obs.nix.
+    vesktop
 
     # ── Media ───────────────────────────────────────────────────────────
     plezy # Plex/Jellyfin client, Discord Rich Presence built in

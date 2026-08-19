@@ -80,8 +80,12 @@
   #    Then right-click the source → Advanced Audio Properties →
   #       Audio Monitoring:  "Monitor and Output"
   #
-  # 4. In Discord: share the OBS window, System Audio ON.
-  #    Known Discord bug: browser YouTube audio can leak into the stream too.
+  # 4. In Vesktop: share the OBS window, and turn its audio sharing on.
+  #    Vesktop captures audio with venmic rather than Electron's own "System
+  #    Audio" — a different mechanism from the official client this config
+  #    used to ship, so check the share really carries the Switch audio the
+  #    first time. Known Discord bug: browser YouTube audio can leak into the
+  #    stream too.
   #
   # Verify the graph any time with:  qpwgraph
 }

@@ -17,7 +17,7 @@ Trying it out first? → **[docs/TESTING.md](docs/TESTING.md)**
   notifications, lock screen, Material You colours generated from the wallpaper
 - NVIDIA open kernel modules, Wayland-native
 - Steam + gamescope + gamemode + ProtonPlus + MangoHud, ntsync on, CurseForge,
-  Discord, OBS, Plezy, Pear Desktop
+  Vesktop, OBS, Plezy, Pear Desktop
 - The three hardware integrations this machine actually exists for:
   the **Elgato 4K X audio routing**, **liquidctl** fan/pump control, and
   **nxapi** Switch Rich Presence
@@ -130,7 +130,7 @@ there even when you launch them by hand later:
 | Workspace | App |
 |---|---|
 | 1 | Brave Origin |
-| 2 | Discord |
+| 2 | Vesktop (Discord) |
 | 3 | Steam |
 | 4 | OBS Studio |
 | 5 | Pear Desktop |
@@ -140,7 +140,7 @@ there even when you launch them by hand later:
 | `SUPER` + `1`…`9`, `0` | Go to workspace 1–10 |
 | `SUPER` + `ALT` + `1`…`9`, `0` | Send the window to workspace 1–10 |
 | `SUPER` + scroll wheel | Next / previous workspace |
-| `SUPER` + `D` | Jump to Discord (workspace 2) |
+| `SUPER` + `D` | Jump to Vesktop, i.e. Discord (workspace 2) |
 | `SUPER` + `M` | Jump to music, i.e. Pear Desktop (workspace 5) |
 | `SUPER` + `S` | Toggle the special (scratchpad) workspace |
 
@@ -205,9 +205,10 @@ that target. Drop uwsm and the Rich Presence silently stops working.
 
 **The Elgato audio design is two paths that end in different places.** An
 always-on `pw-loopback` to the headset, and OBS monitoring into a null sink that
-only Discord reads. That separation is the entire reason the Switch isn't heard
-twice. Both halves are documented at length in `modules/nixos/audio.nix` and
-`home/services/elgato-monitor.nix` — read those before changing either.
+only the Discord client reads. That separation is the entire reason the Switch
+isn't heard twice. Both halves are documented at length in
+`modules/nixos/audio.nix` and `home/services/elgato-monitor.nix` — read those
+before changing either.
 
 **VRR is fullscreen-only and tearing is off, on purpose.** The panel is a 55"
 LG G3, a WOLED whose brightness varies slightly with refresh rate — so
