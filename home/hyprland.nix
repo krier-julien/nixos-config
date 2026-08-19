@@ -105,7 +105,7 @@ in {
       monitor = [
         {
           output = "HDMI-A-1";
-          mode = "3840x2160@199.88";
+          mode = "3840x2160@119.88";
           position = "auto";
           scale = "2";
         }
@@ -360,10 +360,19 @@ in {
         #     hyprctl clients | grep -E "class|title"
         #
         # and add it. SUPER+F un-fullscreens it in the meantime.
+        #
+        # Arknights: Endfield is the worked example. Its launcher is
+        #   …/compatdata/4111544851/pfx/drive_c/Program Files/GRYPHLINK/Launcher.exe
+        # so `launcher` already catches it however Wine titles the window —
+        # "Launcher", "GRYPHLINK Launcher", or the raw path. `gryphlink` is in
+        # the list as well, in case the window is titled after the publisher
+        # and not after the binary. Note what is NOT here: `endfield`. The game
+        # window is titled after the game, so that word would exempt the game
+        # from fullscreen too, which is the opposite of the point.
         {
           match = {
             class = "^(steam_app_.*)$";
-            title = "negative:(?i).*(launcher|bootstrap|setup|installer|updater|patcher|crash handler|configuration tool|battle\\.net|ubisoft connect|uplay|ea app|ea desktop|rockstar games|social club|paradox|easyanticheat).*";
+            title = "negative:(?i).*(launcher|bootstrap|setup|installer|updater|patcher|crash handler|configuration tool|gryphlink|battle\\.net|ubisoft connect|uplay|ea app|ea desktop|rockstar games|social club|paradox|easyanticheat).*";
           };
           fullscreen = true;
         }

@@ -6,6 +6,7 @@
     ./common.nix
 
     ./programs/apps.nix
+    ./programs/mangohud.nix
     ./programs/obs.nix
 
     ./services/browser-clean-exit.nix

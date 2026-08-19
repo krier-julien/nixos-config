@@ -16,8 +16,8 @@ Trying it out first? → **[docs/TESTING.md](docs/TESTING.md)**
 - **Caelestia** shell from its official flake — bar, launcher, dashboard,
   notifications, lock screen, Material You colours generated from the wallpaper
 - NVIDIA open kernel modules, Wayland-native
-- Steam + gamescope + gamemode + ProtonPlus, CurseForge, Discord, OBS, Plezy,
-  Pear Desktop
+- Steam + gamescope + gamemode + ProtonPlus + MangoHud, ntsync on, CurseForge,
+  Discord, OBS, Plezy, Pear Desktop
 - The three hardware integrations this machine actually exists for:
   the **Elgato 4K X audio routing**, **liquidctl** fan/pump control, and
   **nxapi** Switch Rich Presence
@@ -42,7 +42,7 @@ home/
   caelestia.nix                the shell, via its official HM module
   hyprland.nix                 the compositor config — YOURS, not Caelestia's
   theme.nix                    GTK/Qt/cursor scaffolding for Caelestia to recolour
-  programs/                    apps, shell, terminal, obs
+  programs/                    apps, shell, terminal, obs, mangohud
   services/                    browser-clean-exit, elgato-monitor, nxapi
 pkgs/                          things nixpkgs doesn't have
   curseforge/                  AppImage, wrapped
@@ -202,6 +202,23 @@ with VRR on it actively misbehaves when a game runs past the panel maximum, so
 `home/hyprland.nix`, with the reasoning next to them. Enable VRR/G-Sync on the
 TV as well (Game Optimiser), and cap in-game frame rates just under the panel
 maximum — VRR does nothing above it.
+
+**Steam launch options are set once, not per game.** Steam's per-game "Launch
+Options" box lives in Steam's own mutable config, where nothing here can reach
+it. `programs.steam.package = pkgs.steam.override { extraEnv = …; }` is the
+declarative equivalent — the variables are exported inside Steam's FHS
+environment, so every game inherits them and the box stays empty.
+`modules/nixos/gaming.nix` uses it for two things: `PROTON_USE_NTSYNC=1`, and
+`MANGOHUD=1` for the frame cap. gamemode and gamescope are wrappers rather
+than variables, so `gamemoderun %command%` remains a per-game option.
+
+**The frame cap is the reason MangoHud is installed.** VRR does nothing above
+the panel maximum, so every game wants a limit a few frames short of it —
+`home/programs/mangohud.nix` sets 117 once, for everything, with the overlay
+itself hidden (`Shift_R`+`F12` shows it). MangoHud is also injected into
+Steam's FHS through `extraPkgs`: the Vulkan layer has to exist inside the
+pressure-vessel container, and `MANGOHUD=1` without it is the usual reason the
+overlay appears to do nothing on NixOS.
 
 **`liquidctl` matches devices by name, not index.** `-d 0` is a position in USB
 enumeration order; a different kernel or port and you are sending
