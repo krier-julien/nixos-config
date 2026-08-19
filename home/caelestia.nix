@@ -140,16 +140,21 @@
         #
         #     groupOffset = floor((activeWsId - 1) / shown) * shown
         #
-        # so at 5 the bar shows 1–5 while you are on any of them, and flips to
-        # 6–10 the moment you hit SUPER+6. Nothing is reserved for workspaces
-        # you are not using, and the bar never changes width.
+        # so at 6 the bar shows 1–6 while you are on any of them, and would
+        # flip to 7–12 on SUPER+7. The bar never changes width.
         #
-        # This was 10, which pinned ten always-visible slots for five apps.
-        # 5 is also upstream's default (plugin/src/Caelestia/Config/
-        # barconfig.hpp), so it is really the override that was the mistake —
-        # it is spelled out here only because it matches the five autostarted
-        # apps in ../hyprland.nix, and should be changed with them.
-        shown = 5;
+        # Six = the five autostarted apps in ../hyprland.nix, plus one empty
+        # slot to work in. SUPER+6 lands on that spare with 1–5 still on
+        # screen and nothing shifting, which is the point: paging only starts
+        # at 7, and there is no reason to go there.
+        #
+        # This is as close as the config gets to Niri's dynamic workspaces. The
+        # widget is a fixed `Repeater { model: shown }` plus the paging maths
+        # above (modules/bar/components/workspaces/Workspaces.qml) — there is
+        # no "occupied plus one trailing empty" mode to switch on, and no
+        # config key for one. Getting real Niri behaviour means patching that
+        # QML, not editing this file.
+        shown = 6;
         activeIndicator = true;
         showWindows = true;
       };
