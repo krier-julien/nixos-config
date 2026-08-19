@@ -3,6 +3,18 @@
 # pick one. It plays as the desktop background and comes back at the next
 # login. "None" in the same menu returns you to Caelestia's static wallpaper.
 #
+# The picker looks in FOUR places, not one, and that is deliberate. There are
+# already two folders on this machine with "wallpapers" in the name — the one
+# above and ~/Images/wallpapers, which is Caelestia's — and no user should have
+# to remember which of them takes video. Both spellings of each are searched,
+# because `Wallpapers` capitalised is what Caelestia's own docs use:
+#
+#     ~/Vidéos/wallpapers   ~/Vidéos/Wallpapers
+#     ~/Images/wallpapers   ~/Images/Wallpapers
+#
+# A name found in more than one wins in that order. Missing folders are
+# skipped, not an error.
+#
 # ── How it sits next to Caelestia ──────────────────────────────────────────
 # Caelestia draws the still wallpaper itself, on the layer-shell `background`
 # layer. mpvpaper is put on `bottom` — one layer up, still underneath every
@@ -84,21 +96,62 @@
   picker = pkgs.writeShellScriptBin "wallpaper-video" ''
     export PATH=${runtimePath}:$PATH
 
-    dir="$HOME/${videoSubdir}"
-    mkdir -p "$dir" "${stateDir}"
+    mkdir -p "$HOME/${videoSubdir}" "${stateDir}"
 
-    none="✕   None — static wallpaper"
+    # Search order. First match wins when a name appears in more than one.
+    set -- \
+      "$HOME/Vidéos/wallpapers" \
+      "$HOME/Vidéos/Wallpapers" \
+      "$HOME/Images/wallpapers" \
+      "$HOME/Images/Wallpapers"
 
-    menu=$(
-      printf '%s\n' "$none"
-      find "$dir" -maxdepth 1 -type f \
+    # Only the ones that exist — find bails out on the first missing path.
+    dirs=$(
+      for d in "$@"; do
+        [ -d "$d" ] && printf '%s\n' "$d"
+      done
+    )
+
+    each_dir() {
+      [ -n "$dirs" ] || return 0
+      printf '%s\n' "$dirs" | while IFS= read -r d; do
+        [ -n "$d" ] && "$@" "$d"
+      done
+    }
+
+    videos_in() {
+      find "$1" -maxdepth 1 -type f \
         \( -iname '*.mp4' -o -iname '*.webm' -o -iname '*.mkv' \
         -o -iname '*.mov' -o -iname '*.gif' \) \
-        -printf '%f\n' | sort
-    )
+        -printf '%f\n'
+    }
+
+    # Menu entry -> real path. First directory that has the name wins, which is
+    # the search order above.
+    match_in() {
+      [ -r "$1/$name" ] && printf '%s\n' "$1/$name"
+    }
+
+    none="✕   None — static wallpaper"
+    empty="⚠   No videos found — put an .mp4 in ~/Vidéos/wallpapers"
+
+    videos=$(each_dir videos_in | sort -u)
+
+    # An empty list used to render as a menu with one entry and no explanation,
+    # which looks exactly like a broken picker. Say so instead.
+    if [ -n "$videos" ]; then
+      menu=$(printf '%s\n%s\n' "$none" "$videos")
+    else
+      menu=$(printf '%s\n%s\n' "$none" "$empty")
+    fi
 
     choice=$(printf '%s\n' "$menu" | fuzzel --dmenu --prompt "Wallpaper  ") || exit 0
     [ -n "$choice" ] || exit 0
+
+    if [ "$choice" = "$empty" ]; then
+      notify-send "Wallpaper" "Looked in: $dirs"
+      exit 0
+    fi
 
     if [ "$choice" = "$none" ]; then
       : > "${stateFile}"
@@ -106,8 +159,9 @@
       exit 0
     fi
 
-    file="$dir/$choice"
-    [ -r "$file" ] || {
+    name=$choice
+    file=$(each_dir match_in | head -n 1)
+    [ -n "$file" ] && [ -r "$file" ] || {
       notify-send "Wallpaper" "Cannot read $choice"
       exit 1
     }

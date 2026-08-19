@@ -166,7 +166,7 @@ there even when you launch them by hand later:
 
 | Keys | Does |
 |---|---|
-| `SUPER` + `SHIFT` + `W` | Pick an animated wallpaper from `~/Vidéos/wallpapers`, or "None" for the static one |
+| `SUPER` + `SHIFT` + `W` | Pick an animated wallpaper, or "None" for the static one |
 
 ### In games (MangoHud, not Hyprland)
 
@@ -238,8 +238,9 @@ pressure-vessel container, and `MANGOHUD=1` without it is the usual reason the
 overlay appears to do nothing on NixOS.
 
 **Animated wallpapers layer over Caelestia rather than replacing it.** Drop
-`.mp4`/`.webm`/`.mkv` files into `~/Vidéos/wallpapers` and pick one with
-`SUPER`+`SHIFT`+`W`; the choice survives a reboot. mpvpaper runs on the
+`.mp4`/`.webm`/`.mkv` files into `~/Vidéos/wallpapers` — or `~/Images/wallpapers`
+next to the stills, or either spelled with a capital `W`, since all four are
+searched — and pick one with `SUPER`+`SHIFT`+`W`; the choice survives a reboot. mpvpaper runs on the
 layer-shell `bottom` layer — one above the `background` layer Caelestia draws
 its still wallpaper on, still below every window — so with nothing selected the
 desktop is exactly what it was. Picking a video also pulls a frame out with
