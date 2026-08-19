@@ -89,33 +89,49 @@
   #
   # Verify the graph any time with:  qpwgraph
   #
-  # ── Why the stream comes out at 1080p ──────────────────────────────────────
-  # Sharing a WINDOW streams that window's buffer, and nothing upscales it:
-  # picking "1440p" in Equibop only raises the ceiling, it cannot invent
-  # pixels. On this machine the panel is 3840x2160 at scale 2
-  # (../hyprland.nix), so the logical desktop is 1920x1080 — and because
-  # `xwayland.force_zero_scaling = true` hands X11 clients raw pixels at
-  # LOGICAL size, an OBS running under XWayland has a 1920x1080 buffer no
-  # matter how big the window looks. Check which one you have:
+  # ── Why the stream comes out at 1080p30 ────────────────────────────────────
+  # Picking "1440p 60" in the Discord client only raises a ceiling. Nothing in
+  # this chain upscales or interpolates, so the stream can never be better than
+  # what OBS renders — and by default that is exactly 1080p30, from two
+  # settings in Settings → Video:
   #
-  #     hyprctl clients | grep -A2 -i obs      # `xwayland: 1` and the size
+  #   Base (Canvas) Resolution
+  #       OBS defaults this to the size of the desktop it starts on, and takes
+  #       that from Qt, i.e. the LOGICAL size. This machine drives a 3840x2160
+  #       panel at scale 2 (../hyprland.nix), so the logical desktop is
+  #       1920x1080 and OBS helpfully picks a 1080p canvas. Set it to 3840x2160
+  #       by hand. Output (Scaled) Resolution is the one to drop to 2560x1440.
   #
-  # If it says `xwayland: 1`, force OBS onto Wayland (QT_QPA_PLATFORM=wayland,
-  # or `obs --platform wayland`) — its buffer then doubles to 3840x2160 and
-  # 1440p becomes reachable. Sharing the whole SCREEN instead of the window
-  # sidesteps this too: the output is captured at its real 3840x2160.
+  #   Common FPS Values
+  #       Defaults to 30. Nothing else in the chain produces a clean 30, so if
+  #       the stream is 30 this is almost certainly why. Set it to 60.
   #
-  # The frame rate is a separate story. Enabling audio on the share is known to
-  # collapse the video — resolution AND fps dropping the moment an audio source
-  # is attached, closed won't-fix and blamed on Electron (Vesktop#528, and
-  # Equibop is a fork of Vesktop, so the swap is not by itself a fix). The
-  # `--disable-gpu-memory-buffer-video-frames` flag in ../programs/apps.nix is
-  # the one thing here aimed at it: on NVIDIA the zero-copy video path fails to
-  # allocate its buffers and falls back to something far slower. Since the
-  # whole point of this setup is sharing WITH audio, test the share both ways —
-  # if it only misbehaves with audio on, that is the upstream bug, not this
-  # config.
+  # The Switch 2 and the 4K X can both do better than 1080p60, so neither end
+  # of the capture is the limit here — see step 2 above for making the V4L2
+  # source match what the Switch is actually outputting.
   #
-  # Discord's own tier caps sit under all of it: free accounts are limited to
-  # 720p30, and 1080p60 needs Nitro Basic or better.
+  # After changing those, check what the shared window really carries:
+  #
+  #     hyprctl clients -j | jq -r '.[] | select(.class|test("obs";"i"))
+  #                                | "\(.title)  \(.size[0])x\(.size[1])  xwayland=\(.xwayland)"'
+  #
+  # `size` is in LOGICAL pixels; a Wayland client on a scale-2 output backs
+  # that with a buffer twice the size, which is what gets captured. (OBS runs
+  # Wayland-native here — `xwayland: 0` — so the force_zero_scaling trap that
+  # would pin an X11 client to a 1920x1080 buffer does not apply. Worth
+  # re-checking if OBS ever falls back to XWayland.)
+  #
+  # Sharing the whole SCREEN rather than a window sidesteps window sizing
+  # entirely: the output is captured at its real 3840x2160.
+  #
+  # Two things underneath all of the above, neither fixable here:
+  #   * Enabling audio on the share is reported to collapse the video —
+  #     resolution AND fps dropping the moment an audio source is attached,
+  #     closed won't-fix and blamed on Electron (Vesktop#528; Equibop is a fork
+  #     of Vesktop, so the swap is not by itself a fix). The
+  #     `--disable-gpu-memory-buffer-video-frames` flag in ../programs/apps.nix
+  #     is aimed at this. Test the share both ways: if it only misbehaves with
+  #     audio on, that is the upstream bug, not this config.
+  #   * Discord's own tier caps. Free accounts are limited to 720p30, and
+  #     1080p60 needs Nitro Basic or better.
 }
