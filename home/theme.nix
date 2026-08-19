@@ -1,9 +1,10 @@
 # GTK/Qt/cursor theming.
 #
 # Caelestia generates a Material You palette from the wallpaper and applies it
-# to GTK, Qt, btop, fuzzel and Discord itself (`cli.settings.theme.*` in
-# ./caelestia.nix). What is set here is only the scaffolding it needs: an icon
-# theme, a cursor, and a base GTK theme for it to recolour.
+# to GTK, Qt, btop, fuzzel and the Discord client — Vesktop, through Vencord's
+# theme directory (`cli.settings.theme.*` in ./caelestia.nix). What is set here
+# is only the scaffolding it needs: an icon theme, a cursor, and a base GTK
+# theme for it to recolour.
 {pkgs, ...}: {
   gtk = {
     enable = true;

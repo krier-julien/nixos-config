@@ -319,7 +319,9 @@ in {
           workspace = "1 silent";
         }
         {
-          match.class = "(?i)^discord$";
+          # Vesktop reports `vesktop` on Wayland and `Vesktop` (its
+          # StartupWMClass) on XWayland, hence the case-insensitive match.
+          match.class = "(?i)^vesktop$";
           workspace = "2 silent";
         }
         {
@@ -451,7 +453,7 @@ in {
 
       # ── Workspace assignment ────────────────────────────────────────────
       # There is no `workspace_rule` any more, on purpose. It used to carry two
-      # `on_created_empty` entries that launched Pear Desktop and Discord the
+      # `on_created_empty` entries that launched Pear Desktop and Vesktop the
       # first time you opened `special:music` / `special:communication`. Both
       # apps are now autostarted onto numbered workspaces (see `window_rule`
       # above and the autostart block below); keeping the old rules as well
@@ -474,7 +476,7 @@ in {
         hl.exec_cmd("${pkgs.bluez}/bin/mpris-proxy") -- bluetooth headset media keys → MPRIS
 
         -- ---- Daily apps, one per workspace ----
-        -- 1 Brave Origin | 2 Discord | 3 Steam | 4 OBS | 5 Pear Desktop
+        -- 1 Brave Origin | 2 Vesktop | 3 Steam | 4 OBS | 5 Pear Desktop
         --
         -- The workspace is ALSO pinned by class in `window_rule` above; this
         -- is the belt to that pair of braces. hl.dsp.exec_cmd takes a table of
@@ -486,7 +488,7 @@ in {
         -- `silent` on both: the windows appear on their workspaces without
         -- dragging focus along, so login settles on workspace 1.
         hl.dispatch(hl.dsp.exec_cmd("brave-origin",  { workspace = "1 silent" }))
-        hl.dispatch(hl.dsp.exec_cmd("discord",       { workspace = "2 silent" }))
+        hl.dispatch(hl.dsp.exec_cmd("vesktop",       { workspace = "2 silent" }))
         hl.dispatch(hl.dsp.exec_cmd("steam",         { workspace = "3 silent" }))
         hl.dispatch(hl.dsp.exec_cmd("obs",           { workspace = "4 silent" }))
         hl.dispatch(hl.dsp.exec_cmd("pear-desktop",  { workspace = "5 silent" }))
@@ -556,10 +558,10 @@ in {
       hl.bind(mod .. " + S", hl.dsp.workspace.toggle_special())
 
       -- M and D used to toggle special workspaces that launched Pear Desktop
-      -- and Discord the first time you opened them. Both apps now autostart
-      -- onto numbered workspaces, so the binds jump there instead: same
-      -- fingers, same app, and no second copy of it.
-      -- M = music = Pear Desktop (5), D = Discord (2).
+      -- and the Discord client the first time you opened them. Both apps now
+      -- autostart onto numbered workspaces, so the binds jump there instead:
+      -- same fingers, same app, and no second copy of it.
+      -- M = music = Pear Desktop (5), D = Discord = Vesktop (2).
       hl.bind(mod .. " + M", hl.dsp.focus({ workspace = 5 }))
       hl.bind(mod .. " + D", hl.dsp.focus({ workspace = 2 }))
 
