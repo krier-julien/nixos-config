@@ -601,4 +601,33 @@ in {
       hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),        { repeating = true })
     '';
   };
+
+  # ── xdg-desktop-portal-hyprland ─────────────────────────────────────────
+  # The screen-share half of the portal. Not hyprland.lua — xdph reads its own
+  # file, and it is the only place these knobs exist.
+  #
+  # `allow_token_by_default` is the one that matters, and it is here because of
+  # Vesktop. An Electron app does not open ONE screencast session: Chromium
+  # enumerates sources for the picker, then opens a second session when the
+  # stream actually starts, so hyprland-share-picker appears two to four times
+  # for a single "Go Live". Upstream considers that correct behaviour and
+  # closed it won't-fix (xdg-desktop-portal-hyprland#11, Vesktop#583, #971).
+  #
+  # The documented workaround is to tick "allow restore token" in the picker:
+  # the later sessions then reuse the first choice instead of asking again.
+  # This makes that box ticked for you, so the workaround stops depending on
+  # remembering it. Expect one picker, not none — the first session still has
+  # to ask, and the tokens themselves are only partly reliable (xdph#123,
+  # #350). If a share ever restores the WRONG window, delete the saved tokens:
+  #     rm ~/.local/share/xdg-desktop-portal-hyprland/restore_tokens
+  #
+  # `max_fps` is the ceiling xdph will capture at, not a target — it defaults
+  # to 120, so it is not what caps a 30 fps stream. It is pinned to the panel's
+  # own 120 Hz here rather than left implicit.
+  xdg.configFile."hypr/xdph.conf".text = ''
+    screencopy {
+        allow_token_by_default = true
+        max_fps = 120
+    }
+  '';
 }

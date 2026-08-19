@@ -88,4 +88,30 @@
   #    stream too.
   #
   # Verify the graph any time with:  qpwgraph
+  #
+  # ── Why the stream comes out at 1080p ──────────────────────────────────────
+  # Sharing a WINDOW streams that window's buffer, and nothing upscales it:
+  # picking "1440p" in Vesktop only raises the ceiling, it cannot invent
+  # pixels. On this machine the panel is 3840x2160 at scale 2
+  # (../hyprland.nix), so the logical desktop is 1920x1080 — and because
+  # `xwayland.force_zero_scaling = true` hands X11 clients raw pixels at
+  # LOGICAL size, an OBS running under XWayland has a 1920x1080 buffer no
+  # matter how big the window looks. Check which one you have:
+  #
+  #     hyprctl clients | grep -A2 -i obs      # `xwayland: 1` and the size
+  #
+  # If it says `xwayland: 1`, force OBS onto Wayland (QT_QPA_PLATFORM=wayland,
+  # or `obs --platform wayland`) — its buffer then doubles to 3840x2160 and
+  # 1440p becomes reachable. Sharing the whole SCREEN instead of the window
+  # sidesteps this too: the output is captured at its real 3840x2160.
+  #
+  # The frame rate is a separate story, and not one this config can fix.
+  # Enabling audio on a Vesktop share is known to collapse the video — the
+  # report is resolution AND fps dropping the moment an audio source is
+  # attached, closed won't-fix and blamed on Electron (Vesktop#528). Since the
+  # whole point here is sharing WITH audio, test the share both ways: if it
+  # only misbehaves with audio on, that is the bug, not this setup.
+  #
+  # Discord's own tier caps sit under all of it: free accounts are limited to
+  # 720p30, and 1080p60 needs Nitro Basic or better.
 }
