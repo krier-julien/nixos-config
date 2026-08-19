@@ -80,12 +80,14 @@
   #    Then right-click the source → Advanced Audio Properties →
   #       Audio Monitoring:  "Monitor and Output"
   #
-  # 4. In Equibop: share the OBS window, and turn its audio sharing on.
-  #    Equibop captures audio with equimic rather than Electron's own "System
-  #    Audio" — a different mechanism from the official client this config
-  #    used to ship, so check the share really carries the Switch audio the
-  #    first time. Known Discord bug: browser YouTube audio can leak into the
-  #    stream too.
+  # 4. In Discord: share the OBS window with System Audio ON.
+  #    Known Discord bug: browser YouTube audio can leak into the stream too.
+  #
+  #    This step is why the config is back on the official client. Vesktop and
+  #    Equibop capture share audio with venmic/equimic — off PipeWire directly
+  #    — instead of Electron's own "System Audio" scoped to the shared window,
+  #    and the OBS feed did not survive the change. Both are nicer to theme;
+  #    neither is worth this path breaking.
   #
   # Verify the graph any time with:  qpwgraph
   #
@@ -125,13 +127,12 @@
   # entirely: the output is captured at its real 3840x2160.
   #
   # Two things underneath all of the above, neither fixable here:
-  #   * Enabling audio on the share is reported to collapse the video —
-  #     resolution AND fps dropping the moment an audio source is attached,
-  #     closed won't-fix and blamed on Electron (Vesktop#528; Equibop is a fork
-  #     of Vesktop, so the swap is not by itself a fix). The
-  #     `--disable-gpu-memory-buffer-video-frames` flag in ../programs/apps.nix
-  #     is aimed at this. Test the share both ways: if it only misbehaves with
-  #     audio on, that is the upstream bug, not this config.
+  #   * Enabling audio on a share is reported to collapse the video —
+  #     resolution and fps both dropping the moment an audio source is
+  #     attached, closed won't-fix and blamed on Electron (Vesktop#528). Worth
+  #     knowing because it is easy to mistake for the settings above: test the
+  #     share both ways, and if it only misbehaves with audio on, that is
+  #     upstream, not this config.
   #   * Discord's own tier caps. Free accounts are limited to 720p30, and
   #     1080p60 needs Nitro Basic or better.
 }
