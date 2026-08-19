@@ -16,8 +16,8 @@ Trying it out first? → **[docs/TESTING.md](docs/TESTING.md)**
 - **Caelestia** shell from its official flake — bar, launcher, dashboard,
   notifications, lock screen, Material You colours generated from the wallpaper
 - NVIDIA open kernel modules, Wayland-native
-- Steam + gamescope + gamemode + ProtonPlus, CurseForge, Discord, OBS, Plezy,
-  Pear Desktop
+- Steam + gamescope + gamemode + ProtonPlus + MangoHud, ntsync on, CurseForge,
+  Discord, OBS, Plezy, Pear Desktop
 - The three hardware integrations this machine actually exists for:
   the **Elgato 4K X audio routing**, **liquidctl** fan/pump control, and
   **nxapi** Switch Rich Presence
@@ -37,13 +37,13 @@ modules/nixos/
   cpu nvidia capture liquidctl gaming    ← desktop-only, imported by that host
 home/
   common.nix                   shared by both hosts (Caelestia, Hyprland, theme, shell)
-  default.nix                  desktop: common + apps + obs + the two user services
+  default.nix                  desktop: common + apps + obs + the user services
   vm.nix                       VM: common + a handful of test packages
   caelestia.nix                the shell, via its official HM module
   hyprland.nix                 the compositor config — YOURS, not Caelestia's
   theme.nix                    GTK/Qt/cursor scaffolding for Caelestia to recolour
-  programs/                    apps, shell, terminal, obs
-  services/                    elgato-monitor, nxapi
+  programs/                    apps, shell, terminal, obs, mangohud
+  services/                    browser-clean-exit, elgato-monitor, nxapi
 pkgs/                          things nixpkgs doesn't have
   curseforge/                  AppImage, wrapped
   nxapi/                       npm, with a committed runtime-only lockfile
@@ -68,6 +68,122 @@ sudo nixos-rebuild switch --flake ~/nixos-config#julien-desktop
 Or the fish aliases: `rebuild`, `rebuild-test`, `rebuild-boot`, `update`,
 `whatchanged`.
 
+## Keyboard shortcuts
+
+`SUPER` is the mod key throughout. Every bind below is declared in
+`home/hyprland.nix` — this table is a copy for reading, not the source of
+truth, so if the two ever disagree the Nix file wins.
+
+Binds marked 🔒 keep working while the lock screen is up.
+
+### Shell — Caelestia
+
+| Keys | Does |
+|---|---|
+| `SUPER` (tap and release) | Launcher |
+| `SUPER` + `N` | Sidebar / dashboard |
+| `SUPER` + `K` | Show all windows (overview) |
+| `SUPER` + `L` | Lock the screen |
+| `CTRL` + `ALT` + `C` | Clear all notifications |
+| `CTRL` + `ALT` + `Delete` | Session menu (log out / reboot / shut down) |
+| `CTRL` + `SUPER` + `ALT` + `R` | Restart the shell (after a bad QML reload) |
+| `CTRL` + `SUPER` + `SHIFT` + `R` | Kill the shell |
+
+### Apps
+
+| Keys | Does |
+|---|---|
+| `SUPER` + `T` | Terminal (foot) |
+| `SUPER` + `W` | Browser (Brave Origin) |
+| `SUPER` + `E` | File manager (Thunar) |
+| `CTRL` + `ALT` + `V` | Volume mixer (pwvucontrol) |
+
+### Windows
+
+| Keys | Does |
+|---|---|
+| `SUPER` + `Q` | Close |
+| `SUPER` + `F` | Toggle fullscreen — also how you rescue a launcher that got forced fullscreen |
+| `SUPER` + `P` | Pin (keep on top, across workspaces) |
+| `SUPER` + `ALT` + `Space` | Toggle floating |
+| `CTRL` + `SUPER` + `\` | Centre a floating window |
+| `SUPER` + `←` `→` `↑` `↓` | Move focus |
+| `SUPER` + `SHIFT` + `←` `→` `↑` `↓` | Move the window |
+| `SUPER` + `-` / `=` | Shrink / grow the window |
+| `SUPER` + left-drag | Move a window with the mouse |
+| `SUPER` + right-drag | Resize a window with the mouse |
+
+### Groups (tabbed windows)
+
+| Keys | Does |
+|---|---|
+| `SUPER` + `,` | Group / ungroup the focused window |
+| `SUPER` + `U` | Pull the window out of its group |
+| `ALT` + `Tab` | Next window in the group |
+| `CTRL` + `ALT` + `Tab` | Previous window in the group |
+
+### Workspaces
+
+Five apps autostart at login, one per workspace, and a window rule keeps them
+there even when you launch them by hand later:
+
+| Workspace | App |
+|---|---|
+| 1 | Brave Origin |
+| 2 | Discord |
+| 3 | Steam |
+| 4 | OBS Studio |
+| 5 | Pear Desktop |
+
+| Keys | Does |
+|---|---|
+| `SUPER` + `1`…`9`, `0` | Go to workspace 1–10 |
+| `SUPER` + `ALT` + `1`…`9`, `0` | Send the window to workspace 1–10 |
+| `SUPER` + scroll wheel | Next / previous workspace |
+| `SUPER` + `D` | Jump to Discord (workspace 2) |
+| `SUPER` + `M` | Jump to music, i.e. Pear Desktop (workspace 5) |
+| `SUPER` + `S` | Toggle the special (scratchpad) workspace |
+
+### Screenshots, recording, colours
+
+| Keys | Does |
+|---|---|
+| `Print` | Screenshot |
+| `SUPER` + `SHIFT` + `S` | Region screenshot, screen frozen while you select |
+| `SUPER` + `SHIFT` + `ALT` + `S` | Region screenshot, screen live |
+| `CTRL` + `ALT` + `R` | Start / stop recording |
+| `SUPER` + `ALT` + `R` | Start / stop recording a region |
+| `SUPER` + `SHIFT` + `C` | Colour picker (hyprpicker, copies to clipboard) |
+
+### Clipboard and emoji
+
+| Keys | Does |
+|---|---|
+| `SUPER` + `V` | Clipboard history |
+| `SUPER` + `.` | Emoji picker |
+
+### In games (MangoHud, not Hyprland)
+
+These are handled by the MangoHud overlay itself, so they only work inside a
+game. Configured in `home/programs/mangohud.nix`.
+
+| Keys | Does |
+|---|---|
+| `Left Shift` + `` ` `` | Show / hide the overlay (hidden by default) |
+| `Left Shift` + `F1` | Toggle the 117 fps cap |
+| `Left Shift` + `F2` | Start / stop logging |
+
+### Media and volume
+
+| Keys | Does |
+|---|---|
+| `CTRL` + `SUPER` + `Space` | Play / pause 🔒 |
+| `CTRL` + `SUPER` + `=` / `-` | Next / previous track 🔒 |
+| `Play` / `Next` / `Prev` media keys | Same 🔒 |
+| `SUPER` + `SHIFT` + `M`, or `Mute` | Mute output 🔒 |
+| `MicMute` | Mute the microphone 🔒 |
+| `Volume Up` / `Volume Down` | Output volume, ±5% |
+
 ## Design notes
 
 **Caelestia owns the shell; this repo owns the compositor.** The official
@@ -87,6 +203,34 @@ only Discord reads. That separation is the entire reason the Switch isn't heard
 twice. Both halves are documented at length in `modules/nixos/audio.nix` and
 `home/services/elgato-monitor.nix` — read those before changing either.
 
+**VRR is fullscreen-only and tearing is off, on purpose.** The panel is a 55"
+LG G3, a WOLED whose brightness varies slightly with refresh rate — so
+always-on VRR makes the desktop flicker any time something animates at an odd
+frame rate. `misc:vrr = 2` confines G-Sync to a fullscreen window, i.e. to
+games. Tearing is the other half: it only buys latency in competitive play, and
+with VRR on it actively misbehaves when a game runs past the panel maximum, so
+`general:allow_tearing` is `false` and no window opts in. Both live in
+`home/hyprland.nix`, with the reasoning next to them. Enable VRR/G-Sync on the
+TV as well (Game Optimiser), and cap in-game frame rates just under the panel
+maximum — VRR does nothing above it.
+
+**Steam launch options are set once, not per game.** Steam's per-game "Launch
+Options" box lives in Steam's own mutable config, where nothing here can reach
+it. `programs.steam.package = pkgs.steam.override { extraEnv = …; }` is the
+declarative equivalent — the variables are exported inside Steam's FHS
+environment, so every game inherits them and the box stays empty.
+`modules/nixos/gaming.nix` uses it for two things: `PROTON_USE_NTSYNC=1`, and
+`MANGOHUD=1` for the frame cap. gamemode and gamescope are wrappers rather
+than variables, so `gamemoderun %command%` remains a per-game option.
+
+**The frame cap is the reason MangoHud is installed.** VRR does nothing above
+the panel maximum, so every game wants a limit a few frames short of it —
+`home/programs/mangohud.nix` sets 117 once, for everything, with the overlay
+itself hidden (`Left Shift`+`` ` `` shows it). MangoHud is also injected into
+Steam's FHS through `extraPkgs`: the Vulkan layer has to exist inside the
+pressure-vessel container, and `MANGOHUD=1` without it is the usual reason the
+overlay appears to do nothing on NixOS.
+
 **`liquidctl` matches devices by name, not index.** `-d 0` is a position in USB
 enumeration order; a different kernel or port and you are sending
 `set pump speed` to a fan hub. On the old machine this unit also sat
@@ -101,7 +245,7 @@ Four things are not declarative, for reasons that are not fixable:
 |---|---|---|
 | `nxapi nso auth` | A Nintendo login flow | INSTALL.md §7.1 |
 | OBS monitoring device | OBS keeps its config in a profile not worth generating | `home/programs/obs.nix` |
-| Steam → Settings → Accessibility → **UI Scale** | The desktop client ignores the compositor scale, and Valve removed the env var and the launch flag that used to override it (July 2025). The slider is the only remaining control, and it lives in Steam's own mutable config | `modules/nixos/gaming.nix` |
+| Brave → Settings → Get started → On startup → **Continue where you left off** | A user preference in Brave's own mutable profile. `home/services/browser-clean-exit.nix` makes an ordinary reboot a clean exit, which is the real fix; this is the second line for a power cut or an OOM kill, and it costs one checkbox rather than an enterprise policy file and a "managed by your organisation" banner | `home/services/browser-clean-exit.nix` |
 | `caelestia scheme set -n dynamic` | Deriving the palette from the wallpaper is a scheme you select once at runtime, not a config key | `home/caelestia.nix` |
 
 Hashes are all real and committed. `scripts/update-hashes.sh` and
