@@ -191,8 +191,10 @@
     theme = {
       enableTerm = true;
       enableHypr = true;
-      # Writes the palette into Vencord's theme directory, which is what
-      # Vesktop (see ./programs/apps.nix) reads — not the official client.
+      # Compiles the palette with `sass` and drops it into every Discord-mod
+      # theme directory the CLI knows by name — Equicord, Vencord,
+      # BetterDiscord, equibop, vesktop, legcord — so Equibop (see
+      # ./programs/apps.nix) is covered without naming it anywhere.
       enableDiscord = true;
       enableFuzzel = true;
       enableBtop = true;

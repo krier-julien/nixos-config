@@ -1,19 +1,58 @@
-{pkgs, ...}: {
+{pkgs, ...}: let
+  # ── Equibop, with the two Electron flags its own bug tracker asks for ──────
+  # Equibop is the Equicord fork of Vesktop, which was itself the replacement
+  # for the official Discord client. Stock nixpkgs wraps it with
+  # `--ozone-platform-hint=auto`, i.e. "pick a backend yourself", and on
+  # Hyprland that is what these two flags exist to correct:
+  #
+  #   --ozone-platform=wayland
+  #       Decide it here instead of letting Electron guess. Equibop#47 reports
+  #       this as the fix for the share picker opening TWICE per screen share;
+  #       with only the hint, Chromium still brings up the X11 capture path
+  #       alongside the portal. It does not cure the picker reappearing when
+  #       the stream actually starts — that one is xdph asking once per
+  #       screencast session, see the xdph.conf note in ../hyprland.nix.
+  #
+  #   --disable-gpu-memory-buffer-video-frames
+  #       Same issue: on NVIDIA, Chromium's zero-copy video path fails to
+  #       allocate YUV_420_BIPLANAR buffers, spams GBM errors and falls back to
+  #       something much slower. Turning the zero-copy path off is the
+  #       workaround Equibop#47 gives for it.
+  #
+  # Both are explicitly labelled upstream Electron problems that Equibop
+  # cannot fix in-app, hence flags rather than a setting. Drop this whole
+  # wrapper and use plain `equibop` if a later Electron makes it unnecessary.
+  #
+  # Named apart from `equibop` on purpose: the list below opens with
+  # `with pkgs;`, and a let binding of the same name would shadow the nixpkgs
+  # attribute silently. Spelling them differently makes it obvious which one
+  # is installed.
+  equibop-wrapped = pkgs.symlinkJoin {
+    name = "equibop-wrapped";
+    paths = [pkgs.equibop];
+    nativeBuildInputs = [pkgs.makeWrapper];
+    postBuild = ''
+      wrapProgram $out/bin/equibop \
+        --add-flags "--ozone-platform=wayland" \
+        --add-flags "--disable-gpu-memory-buffer-video-frames"
+    '';
+  };
+in {
   home.packages = with pkgs; [
     # ── Communications ──────────────────────────────────────────────────
-    # Vesktop: the Vencord-flavoured Discord client, replacing the official
-    # one. It ships Vencord built in, so themes — including Caelestia's, see
-    # ../theme.nix — apply without patching the app on every update, and it
-    # screen-shares through the xdg-desktop-portal (see
-    # ../../modules/nixos/desktop.nix) rather than needing XWayland.
+    # The Discord client, third spelling: official → Vesktop → Equibop. It
+    # carries Equicord, so Caelestia's generated palette lands on it without
+    # patching the app on every update — the CLI writes into Equicord's and
+    # Equibop's theme directories by name (../theme.nix).
     #
-    # ⚠ Screen-share audio works differently here. The official client sends
-    # app audio through Electron's own capture ("System Audio", scoped to the
-    # shared window); Vesktop uses venmic, which pulls the audio straight off
-    # PipeWire. It is bundled with the nixpkgs package and needs no extra
-    # config, but the OBS→Discord path in ../../modules/nixos/audio.nix has
-    # NOT been re-verified against it — see step 4 in ./obs.nix.
-    vesktop
+    # ⚠ Screen-share audio does not work the way the official client's did.
+    # That one sent app audio through Electron's own capture ("System Audio",
+    # scoped to the shared window). Equibop uses equimic — a fork of Vesktop's
+    # venmic — which pulls audio straight off PipeWire. It needs no config
+    # (the nixpkgs build links it against pipewire and libpulseaudio for
+    # exactly this), but the OBS→Discord path in ../../modules/nixos/audio.nix
+    # has NOT been verified against it — see step 4 in ./obs.nix.
+    equibop-wrapped
 
     # ── Media ───────────────────────────────────────────────────────────
     plezy # Plex/Jellyfin client, Discord Rich Presence built in

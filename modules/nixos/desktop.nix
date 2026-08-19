@@ -90,11 +90,11 @@
     config.common.default = ["hyprland" "gtk"];
   };
 
-  # Secret storage. Vesktop, and anything using libsecret, expects it.
+  # Secret storage. Equibop, and anything using libsecret, expects it.
   services.gnome.gnome-keyring.enable = true;
   # Unlock the keyring at login. This must name the ACTUAL greeter — it was
   # `greetd` before the switch to SDDM, and a stale name here means the keyring
-  # stays locked and Vesktop re-prompts for credentials every session.
+  # stays locked and Equibop re-prompts for credentials every session.
   security.pam.services.sddm.enableGnomeKeyring = true;
 
   # Thumbnails and trash support in the file manager.
@@ -139,7 +139,7 @@
     wl-clipboard # copy
     cliphist # clipboard history
     fuzzel # clipboard/emoji picker UI
-    dart-sass # Vesktop/Discord theming
+    dart-sass # Discord-client theming — Caelestia shells out to `sass`
     glib # gdbus, for closing notifications
     papirus-icon-theme
     papirus-folders # folder colour syncing
