@@ -162,6 +162,17 @@ there even when you launch them by hand later:
 | `SUPER` + `V` | Clipboard history |
 | `SUPER` + `.` | Emoji picker |
 
+### In games (MangoHud, not Hyprland)
+
+These are handled by the MangoHud overlay itself, so they only work inside a
+game. Configured in `home/programs/mangohud.nix`.
+
+| Keys | Does |
+|---|---|
+| `Left Shift` + `` ` `` | Show / hide the overlay (hidden by default) |
+| `Left Shift` + `F1` | Toggle the 117 fps cap |
+| `Left Shift` + `F2` | Start / stop logging |
+
 ### Media and volume
 
 | Keys | Does |
@@ -215,7 +226,7 @@ than variables, so `gamemoderun %command%` remains a per-game option.
 **The frame cap is the reason MangoHud is installed.** VRR does nothing above
 the panel maximum, so every game wants a limit a few frames short of it —
 `home/programs/mangohud.nix` sets 117 once, for everything, with the overlay
-itself hidden (`Shift_R`+`F12` shows it). MangoHud is also injected into
+itself hidden (`Left Shift`+`` ` `` shows it). MangoHud is also injected into
 Steam's FHS through `extraPkgs`: the Vulkan layer has to exist inside the
 pressure-vessel container, and `MANGOHUD=1` without it is the usual reason the
 overlay appears to do nothing on NixOS.

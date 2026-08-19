@@ -38,9 +38,19 @@
       fps_limit_method = "early";
 
       # The HUD is off by default — the cap is the point, the numbers are not.
-      # Shift_R+F12 toggles it (MangoHud's own default bind), and everything
-      # below is what you see when you do.
+      # Everything below is what you see when you turn it on.
       no_display = true;
+
+      # Left Shift + ` toggles it. Key names are XKB keysyms, which is why the
+      # backtick is spelled `grave`; MangoHud resolves them through
+      # XStringToKeysym, so the X11 spelling is the right one even on Wayland.
+      # It replaces MangoHud's own Shift_R+F12 default.
+      #
+      # Caveat inherited from MangoHud, not from this file: the bind is read
+      # through X11, so it works in anything running on XWayland — which is
+      # every Proton game, and therefore everything this is for. A rare
+      # Wayland-native title may not see it.
+      toggle_hud = "Shift_L+grave";
 
       fps = true;
       frametime = true;

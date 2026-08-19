@@ -89,7 +89,7 @@
         # MangoHud on for every Vulkan title. The HUD itself is hidden —
         # `no_display` in ../../home/programs/mangohud.nix — because what this
         # is actually for is the 117 fps cap that keeps frame rates inside the
-        # G-Sync window. Shift_R+F12 shows the overlay when you want numbers.
+        # G-Sync window. Left Shift + ` shows the overlay when you want numbers.
         MANGOHUD = "1";
 
         # Valve's Proton needs to be told; GE-Proton ≥ 10.10 already is.
