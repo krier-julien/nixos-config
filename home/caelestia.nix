@@ -141,6 +141,19 @@
         inhibitWhenAudio = true;
         inhibitWhenCharging = false; # desktop; there is no battery
 
+        # ONE entry, by choice. Upstream ships three — lock, then `dpms off`,
+        # then `suspendThenHibernate` — and the list replaces rather than
+        # merges, so what is written here is the entire policy.
+        #
+        # The dropped `dpms off` step is worth knowing about rather than
+        # rediscovering: on a WOLED, an image held on screen for hours is the
+        # burn-in case, and the lock screen is exactly that kind of image. The
+        # panel's own protections — pixel shift, logo dimming, the compensation
+        # cycle it runs on standby — are what is carrying that risk now. If a
+        # faint ghost of the lock screen ever shows up on a grey slide, this is
+        # the entry to put back:
+        #
+        #   { timeout = 900; idleAction = "dpms off"; returnAction = "dpms on"; }
         timeouts = [
           # 10 minutes → lock. Change this number, nothing else, to retime it.
           {
@@ -149,20 +162,6 @@
             inhibitWhenAudio = true;
             respectInhibitors = true;
           }
-
-          # 15 minutes → screen off. This one is NOT optional on this display:
-          # the panel is a 55" WOLED, and a lock screen left up all night is a
-          # static image burning into it. DPMS off is the protection, and five
-          # minutes after the lock is soon enough to matter.
-          {
-            timeout = 900;
-            idleAction = "dpms off";
-            returnAction = "dpms on";
-            inhibitWhenAudio = true;
-            respectInhibitors = true;
-          }
-
-          # No third entry. Upstream's is `suspendThenHibernate`.
         ];
       };
     };

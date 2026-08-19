@@ -250,13 +250,16 @@ wallpaper-video.nix`.
 **The machine locks but never sleeps.** Idle handling is the shell's, not
 hypridle's — Caelestia moved it in-house, and a second idle daemon on the same
 seat would fight it. `general.idle.timeouts` in `home/caelestia.nix` is the
-whole policy: lock at 10 minutes, screen off at 15 (a static lock screen left
-up all night is burn-in on a WOLED), and no third entry where upstream's
-default has suspend-then-hibernate. Audio playback and any fullscreen window
-hold the chain off. `services.logind.settings.Login.IdleAction = "ignore"` in
+whole policy, and because the list replaces rather than merges, what is written
+there is all of it: lock at 10 minutes, and nothing else. Upstream's default
+adds `dpms off` and then suspend-then-hibernate; both are deliberately gone.
+Audio playback and any fullscreen window hold the chain off.
+`services.logind.settings.Login.IdleAction = "ignore"` in
 `modules/nixos/desktop.nix` covers the other thing that could suspend on a
 timer. Suspending by hand still works — this is about the timer, not the
-capability.
+capability. The one thing to keep an eye on: with no `dpms off` step the lock
+screen stays lit indefinitely, and the panel is a WOLED — the file records how
+to put that step back if a ghost image ever appears.
 
 **`liquidctl` matches devices by name, not index.** `-d 0` is a position in USB
 enumeration order; a different kernel or port and you are sending
