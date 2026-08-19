@@ -247,6 +247,17 @@ ffmpeg and feeds it to `caelestia wallpaper -f`, so the Material You palette
 regenerates from what is actually moving on screen. `home/services/
 wallpaper-video.nix`.
 
+**The machine locks but never sleeps.** Idle handling is the shell's, not
+hypridle's — Caelestia moved it in-house, and a second idle daemon on the same
+seat would fight it. `general.idle.timeouts` in `home/caelestia.nix` is the
+whole policy: lock at 10 minutes, screen off at 15 (a static lock screen left
+up all night is burn-in on a WOLED), and no third entry where upstream's
+default has suspend-then-hibernate. Audio playback and any fullscreen window
+hold the chain off. `services.logind.settings.Login.IdleAction = "ignore"` in
+`modules/nixos/desktop.nix` covers the other thing that could suspend on a
+timer. Suspending by hand still works — this is about the timer, not the
+capability.
+
 **`liquidctl` matches devices by name, not index.** `-d 0` is a position in USB
 enumeration order; a different kernel or port and you are sending
 `set pump speed` to a fan hub. On the old machine this unit also sat

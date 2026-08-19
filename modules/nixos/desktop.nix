@@ -67,6 +67,21 @@
   # ever stops working, THIS is the first thing to check.
   services.displayManager.defaultSession = "hyprland-uwsm";
 
+  # ── Never sleep on a timer ───────────────────────────────────────────────
+  # logind is the *other* thing that can suspend a machine on idle, separately
+  # from anything the desktop does. `ignore` is already the NixOS default, so
+  # this line changes nothing today — it is here so that the intent is written
+  # down in one place with the shell's idle config (../../home/caelestia.nix,
+  # `general.idle`), and so a future change to the default cannot quietly put
+  # the box to sleep mid-download.
+  #
+  # This disables the idle TIMER, not suspend itself: `systemctl suspend` and
+  # the session menu still work. To remove the capability outright it would be
+  # `systemd.targets.sleep.enable = false` and its three siblings — not done,
+  # because it would also break the liquidctl resume hook in ./liquidctl.nix
+  # for no benefit.
+  services.logind.settings.Login.IdleAction = "ignore";
+
   # Portals: screen sharing, file pickers, and the "share a window" flow that
   # your OBS→Discord path depends on.
   xdg.portal = {
