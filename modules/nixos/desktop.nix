@@ -37,6 +37,12 @@
     # The theme is Qt6/QML and needs these at runtime. Without them SDDM starts,
     # fails to load the QML, and falls back to a blank screen — the classic
     # "SDDM boots to black" symptom.
+    #
+    # qtmultimedia is the load-bearing one now that the theme is an ANIMATED
+    # preset: the background is an mp4 played by a QML MediaPlayer, and without
+    # this module the greeter renders a black rectangle where the video should
+    # be (NixOS/nixpkgs#390251). Qt 6 plays it through its FFmpeg backend, which
+    # is what nixpkgs builds by default — no GStreamer plugins needed.
     extraPackages = with pkgs.kdePackages; [
       qtsvg
       qtmultimedia
@@ -60,6 +66,21 @@
   # user, so after the first login it stays picked — but if the Switch presence
   # ever stops working, THIS is the first thing to check.
   services.displayManager.defaultSession = "hyprland-uwsm";
+
+  # ── Never sleep on a timer ───────────────────────────────────────────────
+  # logind is the *other* thing that can suspend a machine on idle, separately
+  # from anything the desktop does. `ignore` is already the NixOS default, so
+  # this line changes nothing today — it is here so that the intent is written
+  # down in one place with the shell's idle config (../../home/caelestia.nix,
+  # `general.idle`), and so a future change to the default cannot quietly put
+  # the box to sleep mid-download.
+  #
+  # This disables the idle TIMER, not suspend itself: `systemctl suspend` and
+  # the session menu still work. To remove the capability outright it would be
+  # `systemd.targets.sleep.enable = false` and its three siblings — not done,
+  # because it would also break the liquidctl resume hook in ./liquidctl.nix
+  # for no benefit.
+  services.logind.settings.Login.IdleAction = "ignore";
 
   # Portals: screen sharing, file pickers, and the "share a window" flow that
   # your OBS→Discord path depends on.
@@ -100,7 +121,12 @@
     #   hyprland_kath            jake_the_dog          japanese_aesthetic
     #   pixel_sakura             pixel_sakura_static   purple_leaves
     #   post-apocalyptic_hacker
-    (sddm-astronaut.override {embeddedTheme = "astronaut";})
+    #
+    # Three of them are animated — the background is a bundled mp4 rather than
+    # a still: hyprland_kath, pixel_sakura and jake_the_dog. (pixel_sakura_
+    # static exists precisely because pixel_sakura is not.) Those need
+    # qtmultimedia above; the others do not care.
+    (sddm-astronaut.override {embeddedTheme = "hyprland_kath";})
 
     # --- Caelestia CLI runtime dependencies -------------------------------
     # The home-manager module pulls the CLI in, but these are the external

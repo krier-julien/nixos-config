@@ -43,7 +43,7 @@ home/
   hyprland.nix                 the compositor config — YOURS, not Caelestia's
   theme.nix                    GTK/Qt/cursor scaffolding for Caelestia to recolour
   programs/                    apps, shell, terminal, obs, mangohud
-  services/                    browser-clean-exit, elgato-monitor, nxapi
+  services/                    browser-clean-exit, elgato-monitor, nxapi, wallpaper-video
 pkgs/                          things nixpkgs doesn't have
   curseforge/                  AppImage, wrapped
   nxapi/                       npm, with a committed runtime-only lockfile
@@ -162,6 +162,12 @@ there even when you launch them by hand later:
 | `SUPER` + `V` | Clipboard history |
 | `SUPER` + `.` | Emoji picker |
 
+### Wallpaper
+
+| Keys | Does |
+|---|---|
+| `SUPER` + `SHIFT` + `W` | Pick an animated wallpaper from `~/Vidéos/wallpapers`, or "None" for the static one |
+
 ### In games (MangoHud, not Hyprland)
 
 These are handled by the MangoHud overlay itself, so they only work inside a
@@ -230,6 +236,30 @@ itself hidden (`Left Shift`+`` ` `` shows it). MangoHud is also injected into
 Steam's FHS through `extraPkgs`: the Vulkan layer has to exist inside the
 pressure-vessel container, and `MANGOHUD=1` without it is the usual reason the
 overlay appears to do nothing on NixOS.
+
+**Animated wallpapers layer over Caelestia rather than replacing it.** Drop
+`.mp4`/`.webm`/`.mkv` files into `~/Vidéos/wallpapers` and pick one with
+`SUPER`+`SHIFT`+`W`; the choice survives a reboot. mpvpaper runs on the
+layer-shell `bottom` layer — one above the `background` layer Caelestia draws
+its still wallpaper on, still below every window — so with nothing selected the
+desktop is exactly what it was. Picking a video also pulls a frame out with
+ffmpeg and feeds it to `caelestia wallpaper -f`, so the Material You palette
+regenerates from what is actually moving on screen. `home/services/
+wallpaper-video.nix`.
+
+**The machine locks but never sleeps.** Idle handling is the shell's, not
+hypridle's — Caelestia moved it in-house, and a second idle daemon on the same
+seat would fight it. `general.idle.timeouts` in `home/caelestia.nix` is the
+whole policy, and because the list replaces rather than merges, what is written
+there is all of it: lock at 10 minutes, and nothing else. Upstream's default
+adds `dpms off` and then suspend-then-hibernate; both are deliberately gone.
+Audio playback and any fullscreen window hold the chain off.
+`services.logind.settings.Login.IdleAction = "ignore"` in
+`modules/nixos/desktop.nix` covers the other thing that could suspend on a
+timer. Suspending by hand still works — this is about the timer, not the
+capability. The one thing to keep an eye on: with no `dpms off` step the lock
+screen stays lit indefinitely, and the panel is a WOLED — the file records how
+to put that step back if a ghost image ever appears.
 
 **`liquidctl` matches devices by name, not index.** `-d 0` is a position in USB
 enumeration order; a different kernel or port and you are sending

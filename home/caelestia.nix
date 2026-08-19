@@ -105,10 +105,65 @@
     # playback and explorer, and it was another "Unknown option" toast. The
     # browser is chosen by xdg.mimeApps in ./programs/apps.nix, which is what
     # the shell (and everything else) goes through to open a URL anyway.
-    general.apps = {
-      terminal = ["foot"];
-      explorer = ["thunar"];
-      audio = ["pwvucontrol"];
+    general = {
+      apps = {
+        terminal = ["foot"];
+        explorer = ["thunar"];
+        audio = ["pwvucontrol"];
+      };
+
+      # ── Idle: lock, blank, never sleep ─────────────────────────────────
+      # Idle handling belongs to the shell, not to hypridle. Caelestia moved
+      # it in-house, so this machine has no hypridle and should not grow one —
+      # two idle daemons watching the same seat is how you get a screen that
+      # locks twice and blanks at the wrong moment.
+      #
+      # `timeouts` is a LIST, and the same rule applies as to bar.statusIcons
+      # above: loading it replaces the list wholesale rather than merging into
+      # the default. That is exactly what is wanted here, because the upstream
+      # default ends with a suspend-then-hibernate step and this box has no
+      # business sleeping — it is a desktop, and a suspend costs you the
+      # loopback, the Rich Presence, and whatever was downloading.
+      #
+      # Removing that entry is the entire "disable sleep" change. Nothing else
+      # in this session suspends on a timer; ../modules/nixos/desktop.nix
+      # pins logind's own IdleAction to `ignore` so it stays that way.
+      # `systemctl suspend` by hand, and the session menu's entries, still
+      # work — this is about the timer, not about the capability.
+      idle = {
+        # A manual suspend still locks first, so you do not come back to an
+        # unlocked desktop.
+        lockBeforeSleep = true;
+
+        # Anything playing audio holds the whole idle chain off. Between this
+        # and the `idle_inhibit = "fullscreen"` window rule in ../hyprland.nix,
+        # a film or a game will not be interrupted.
+        inhibitWhenAudio = true;
+        inhibitWhenCharging = false; # desktop; there is no battery
+
+        # ONE entry, by choice. Upstream ships three — lock, then `dpms off`,
+        # then `suspendThenHibernate` — and the list replaces rather than
+        # merges, so what is written here is the entire policy.
+        #
+        # The dropped `dpms off` step is worth knowing about rather than
+        # rediscovering: on a WOLED, an image held on screen for hours is the
+        # burn-in case, and the lock screen is exactly that kind of image. The
+        # panel's own protections — pixel shift, logo dimming, the compensation
+        # cycle it runs on standby — are what is carrying that risk now. If a
+        # faint ghost of the lock screen ever shows up on a grey slide, this is
+        # the entry to put back:
+        #
+        #   { timeout = 900; idleAction = "dpms off"; returnAction = "dpms on"; }
+        timeouts = [
+          # 10 minutes → lock. Change this number, nothing else, to retime it.
+          {
+            timeout = 600;
+            idleAction = "lock";
+            inhibitWhenAudio = true;
+            respectInhibitors = true;
+          }
+        ];
+      };
     };
 
     # `appearance.palette.autoMode` used to be set here and is not a config key
