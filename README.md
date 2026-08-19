@@ -139,6 +139,10 @@ there even when you launch them by hand later:
 | `SUPER` + `M` | Jump to music, i.e. Pear Desktop (workspace 5) |
 | `SUPER` + `S` | Toggle the special (scratchpad) workspace |
 
+The bar draws five workspace slots, not ten. Workspaces 6–10 still exist and
+`SUPER`+`6` still goes there — the bar just pages to 6–10 when you do, instead
+of reserving space for them the rest of the time.
+
 ### Screenshots, recording, colours
 
 | Keys | Does |

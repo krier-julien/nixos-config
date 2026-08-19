@@ -135,7 +135,21 @@
       ];
 
       workspaces = {
-        shown = 10;
+        # How many slots the bar draws, NOT how many workspaces exist. The
+        # widget pages in blocks of this size:
+        #
+        #     groupOffset = floor((activeWsId - 1) / shown) * shown
+        #
+        # so at 5 the bar shows 1–5 while you are on any of them, and flips to
+        # 6–10 the moment you hit SUPER+6. Nothing is reserved for workspaces
+        # you are not using, and the bar never changes width.
+        #
+        # This was 10, which pinned ten always-visible slots for five apps.
+        # 5 is also upstream's default (plugin/src/Caelestia/Config/
+        # barconfig.hpp), so it is really the override that was the mistake —
+        # it is spelled out here only because it matches the five autostarted
+        # apps in ../hyprland.nix, and should be changed with them.
+        shown = 5;
         activeIndicator = true;
         showWindows = true;
       };
