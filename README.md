@@ -17,7 +17,7 @@ Trying it out first? → **[docs/TESTING.md](docs/TESTING.md)**
   notifications, lock screen, Material You colours generated from the wallpaper
 - NVIDIA open kernel modules, Wayland-native
 - Steam + gamescope + gamemode + ProtonPlus + MangoHud, ntsync on, CurseForge,
-  Vesktop, OBS, Plezy, Pear Desktop
+  Equibop, OBS, Plezy, Pear Desktop
 - The three hardware integrations this machine actually exists for:
   the **Elgato 4K X audio routing**, **liquidctl** fan/pump control, and
   **nxapi** Switch Rich Presence
@@ -130,7 +130,7 @@ there even when you launch them by hand later:
 | Workspace | App |
 |---|---|
 | 1 | Brave Origin |
-| 2 | Vesktop (Discord) |
+| 2 | Equibop (Discord) |
 | 3 | Steam |
 | 4 | OBS Studio |
 | 5 | Pear Desktop |
@@ -140,7 +140,7 @@ there even when you launch them by hand later:
 | `SUPER` + `1`…`9`, `0` | Go to workspace 1–10 |
 | `SUPER` + `ALT` + `1`…`9`, `0` | Send the window to workspace 1–10 |
 | `SUPER` + scroll wheel | Next / previous workspace |
-| `SUPER` + `D` | Jump to Vesktop, i.e. Discord (workspace 2) |
+| `SUPER` + `D` | Jump to Equibop, i.e. Discord (workspace 2) |
 | `SUPER` + `M` | Jump to music, i.e. Pear Desktop (workspace 5) |
 | `SUPER` + `S` | Toggle the special (scratchpad) workspace |
 

@@ -60,7 +60,7 @@
     GBM_BACKEND = "nvidia-drm";
     __GLX_VENDOR_LIBRARY_NAME = "nvidia";
 
-    # Electron apps (Vesktop, Pear Desktop, CurseForge) default to X11 unless
+    # Electron apps (Equibop, Pear Desktop, CurseForge) default to X11 unless
     # told otherwise; "auto" makes them pick Wayland when it is available.
     # Electron reads this itself, from version 28 on.
     ELECTRON_OZONE_PLATFORM_HINT = "auto";
