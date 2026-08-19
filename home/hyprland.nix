@@ -361,18 +361,29 @@ in {
         #
         # and add it. SUPER+F un-fullscreens it in the meantime.
         #
-        # Arknights: Endfield is the worked example. Its launcher is
-        #   …/compatdata/4111544851/pfx/drive_c/Program Files/GRYPHLINK/Launcher.exe
-        # so `launcher` already catches it however Wine titles the window —
-        # "Launcher", "GRYPHLINK Launcher", or the raw path. `gryphlink` is in
-        # the list as well, in case the window is titled after the publisher
-        # and not after the binary. Note what is NOT here: `endfield`. The game
-        # window is titled after the game, so that word would exempt the game
-        # from fullscreen too, which is the opposite of the point.
+        # ⚠ The FIRST alternative, `^$`, is the one that is easy to leave out
+        # and the one that bites. Arknights: Endfield opens two windows under
+        # the same class:
+        #
+        #     class: steam_app_4111544851   title:
+        #     class: steam_app_4111544851   title: GRYPHLINK
+        #
+        # The named one is the launcher you interact with. The nameless one is
+        # a bare backing window, and with only the word list here it matched
+        # nothing, so the rule fullscreened it — a white sheet across the whole
+        # panel with the logo stranded in the corner. An untitled window is
+        # never the thing you want blown up to 4K, so empty titles are exempt
+        # outright.
+        #
+        # `gryphlink` covers the named half; `launcher` would have too, in case
+        # a future build titles it after the binary (…/GRYPHLINK/Launcher.exe).
+        # Note what is NOT here: `endfield`. The game window is titled after
+        # the game, so that word would exempt the game from fullscreen as well,
+        # which is the opposite of the point.
         {
           match = {
             class = "^(steam_app_.*)$";
-            title = "negative:(?i).*(launcher|bootstrap|setup|installer|updater|patcher|crash handler|configuration tool|gryphlink|battle\\.net|ubisoft connect|uplay|ea app|ea desktop|rockstar games|social club|paradox|easyanticheat).*";
+            title = "negative:(?i)(^$|.*(launcher|bootstrap|setup|installer|updater|patcher|crash handler|configuration tool|gryphlink|battle\\.net|ubisoft connect|uplay|ea app|ea desktop|rockstar games|social club|paradox|easyanticheat).*)";
           };
           fullscreen = true;
         }
@@ -561,6 +572,12 @@ in {
       hl.bind("CTRL + ALT + R",            hl.dsp.exec_cmd("caelestia record"))
       hl.bind(mod .. " + ALT + R",         hl.dsp.exec_cmd("caelestia record -s"))
       hl.bind(mod .. " + SHIFT + C",       hl.dsp.exec_cmd("hyprpicker -a"))
+
+      -- ---- Wallpaper ----
+      -- Picks an .mp4/.webm/.mkv from ~/Vidéos/wallpapers and plays it as the
+      -- desktop background, or "None" to fall back to the static one. See
+      -- ./services/wallpaper-video.nix.
+      hl.bind(mod .. " + SHIFT + W", hl.dsp.exec_cmd("pkill fuzzel || wallpaper-video"))
 
       -- ---- Clipboard / emoji ----
       hl.bind(mod .. " + V",      hl.dsp.exec_cmd("pkill fuzzel || caelestia clipboard"))

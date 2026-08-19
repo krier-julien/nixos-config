@@ -12,5 +12,6 @@
     ./services/browser-clean-exit.nix
     ./services/elgato-monitor.nix
     ./services/nxapi.nix
+    ./services/wallpaper-video.nix
   ];
 }

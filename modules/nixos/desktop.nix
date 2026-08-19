@@ -37,6 +37,12 @@
     # The theme is Qt6/QML and needs these at runtime. Without them SDDM starts,
     # fails to load the QML, and falls back to a blank screen — the classic
     # "SDDM boots to black" symptom.
+    #
+    # qtmultimedia is the load-bearing one now that the theme is an ANIMATED
+    # preset: the background is an mp4 played by a QML MediaPlayer, and without
+    # this module the greeter renders a black rectangle where the video should
+    # be (NixOS/nixpkgs#390251). Qt 6 plays it through its FFmpeg backend, which
+    # is what nixpkgs builds by default — no GStreamer plugins needed.
     extraPackages = with pkgs.kdePackages; [
       qtsvg
       qtmultimedia
@@ -100,7 +106,12 @@
     #   hyprland_kath            jake_the_dog          japanese_aesthetic
     #   pixel_sakura             pixel_sakura_static   purple_leaves
     #   post-apocalyptic_hacker
-    (sddm-astronaut.override {embeddedTheme = "astronaut";})
+    #
+    # Three of them are animated — the background is a bundled mp4 rather than
+    # a still: hyprland_kath, pixel_sakura and jake_the_dog. (pixel_sakura_
+    # static exists precisely because pixel_sakura is not.) Those need
+    # qtmultimedia above; the others do not care.
+    (sddm-astronaut.override {embeddedTheme = "hyprland_kath";})
 
     # --- Caelestia CLI runtime dependencies -------------------------------
     # The home-manager module pulls the CLI in, but these are the external
